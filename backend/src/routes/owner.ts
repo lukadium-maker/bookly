@@ -182,6 +182,33 @@ export async function ownerRoutes(app: FastifyInstance) {
     return service
   })
 
+  // Edit business info
+  app.patch('/api/owner/business', async (request, reply) => {
+    const { telegramId, name, description, category } = request.body as {
+      telegramId: string
+      name?: string
+      description?: string
+      category?: string
+    }
+
+    const user = await prisma.user.findUnique({ where: { telegramId } })
+    if (!user) return reply.status(404).send({ error: 'User not found' })
+
+    const business = await prisma.business.findFirst({ where: { ownerId: user.id } })
+    if (!business) return reply.status(404).send({ error: 'No business found' })
+
+    const updated = await prisma.business.update({
+      where: { id: business.id },
+      data: {
+        ...(name && { name }),
+        ...(description !== undefined && { description }),
+        ...(category && { category }),
+      }
+    })
+
+    return { success: true, business: updated }
+  })
+
   // Delete business
   app.delete('/api/owner/business', async (request, reply) => {
     const { telegramId } = request.body as { telegramId: string }

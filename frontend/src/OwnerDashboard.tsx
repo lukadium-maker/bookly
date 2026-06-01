@@ -54,7 +54,7 @@ interface WorkingHour {
   isActive: boolean
 }
 
-type OwnerScreen = 'home' | 'appointments' | 'detail' | 'services' | 'hours' | 'addService' | 'share' | 'settings'
+type OwnerScreen = 'home' | 'appointments' | 'detail' | 'services' | 'hours' | 'addService' | 'share' | 'settings' | 'editBusiness'
 
 interface Props {
   telegramId: string
@@ -73,6 +73,11 @@ export default function OwnerDashboard({ telegramId }: Props) {
   const [hasNoBusiness, setHasNoBusiness] = useState(false)
   const [businessSlug, setBusinessSlug] = useState('')
   const [businessName, setBusinessName] = useState('')
+  const [editName, setEditName] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editCategory, setEditCategory] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -101,6 +106,9 @@ export default function OwnerDashboard({ telegramId }: Props) {
       setWorkingHours(bizRes.data.workingHours)
       setBusinessSlug(bizRes.data.slug || '')
       setBusinessName(bizRes.data.name || '')
+      setEditName(bizRes.data.name || '')
+      setEditDesc(bizRes.data.description || '')
+      setEditCategory(bizRes.data.category || '')
       // Load avatar
       try {
         const avatarRes = await axios.get(API + '/owner/avatar', { params: { telegramId } })
@@ -624,6 +632,10 @@ export default function OwnerDashboard({ telegramId }: Props) {
           <h1>تنظیمات</h1>
         </div>
 
+        <button className="menu-btn" onClick={() => setScreen('editBusiness')} style={{marginBottom:'16px'}}>
+          <span>✏️</span>
+          <span>ویرایش اطلاعات</span>
+        </button>
         <div className="section-title">اطلاعات کسب‌وکار</div>
         <div className="confirm-card">
           <div className="confirm-row">
@@ -651,6 +663,93 @@ export default function OwnerDashboard({ telegramId }: Props) {
             {deleting ? 'در حال حذف...' : 'حذف کسب‌وکار'}
           </button>
         </div>
+        <div className="bottom-padding" />
+      </div>
+    )
+  }
+
+  // EDIT BUSINESS SCREEN
+  if (screen === 'editBusiness') {
+
+    const categories = [
+      { value: 'hair', label: 'آرایشگاه' },
+      { value: 'nail', label: 'ناخن و مانیکور' },
+      { value: 'beauty', label: 'زیبایی' },
+      { value: 'massage', label: 'ماساژ' },
+      { value: 'tattoo', label: 'تاتو' },
+      { value: 'fitness', label: 'ورزش' },
+      { value: 'other', label: 'سایر' },
+    ]
+
+    const handleSave = async () => {
+      if (!editName.trim()) { setEditError('نام الزامی است'); return }
+      setEditSaving(true)
+      setEditError('')
+      try {
+        await axios.patch(API + '/owner/business', {
+          telegramId,
+          name: editName,
+          description: editDesc,
+          category: editCategory
+        })
+        setBusinessName(editName)
+        alert('اطلاعات به‌روز شد!')
+        setScreen('settings')
+      } catch {
+        setEditError('خطا در ذخیره‌سازی')
+      }
+      setEditSaving(false)
+    }
+
+    return (
+      <div className="screen" dir="rtl">
+        <button className="back-btn" onClick={() => setScreen('settings')}>← بازگشت</button>
+        <div className="header">
+          <div className="business-avatar">✏️</div>
+          <h1>ویرایش اطلاعات</h1>
+        </div>
+
+        <div className="section-title">نام کسب‌وکار</div>
+        <input
+          className="text-input"
+          value={editName}
+          onChange={e => setEditName(e.target.value)}
+          placeholder="نام کسب‌وکار"
+        />
+
+        <div className="section-title">توضیحات</div>
+        <textarea
+          className="text-input"
+          value={editDesc}
+          onChange={e => setEditDesc(e.target.value)}
+          placeholder="توضیحات کسب‌وکار (اختیاری)"
+          rows={3}
+          style={{resize:'none'}}
+        />
+
+        <div className="section-title">دسته‌بندی</div>
+        <div style={{display:'flex', flexWrap:'wrap', gap:'8px', marginBottom:'24px'}}>
+          {categories.map(cat => (
+            <button
+              key={cat.value}
+              onClick={() => setEditCategory(cat.value)}
+              style={{
+                padding:'10px 16px',
+                borderRadius:'50px',
+                border: editCategory === cat.value ? '2px solid #6333ff' : '1px solid rgba(255,255,255,0.1)',
+                background: editCategory === cat.value ? 'rgba(99,51,255,0.2)' : 'transparent',
+                color: 'white',
+                fontSize: '14px',
+                cursor: 'pointer'
+              }}
+            >{cat.label}</button>
+          ))}
+        </div>
+
+        {editError && <div className="error-msg">{editError}</div>}
+        <button className="main-btn" onClick={handleSave} disabled={editSaving}>
+          {editSaving ? 'در حال ذخیره‌سازی...' : 'ذخیره‌سازی'}
+        </button>
         <div className="bottom-padding" />
       </div>
     )

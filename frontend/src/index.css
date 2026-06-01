@@ -796,3 +796,55 @@ body::before {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.text-input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: #ffffff;
+  font-size: 15px;
+  font-family: inherit;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border 0.2s;
+  direction: rtl;
+}
+
+.text-input:focus {
+  border-color: rgba(99,51,255,0.5);
+}
+
+textarea.text-input {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.text-input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: #ffffff;
+  font-size: 15px;
+  font-family: inherit;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border 0.2s;
+  direction: rtl;
+}
+
+.text-input:focus {
+  border-color: rgba(99,51,255,0.5);
+}
+
+textarea.text-input {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.6;
+}
