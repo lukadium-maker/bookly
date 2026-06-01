@@ -61,7 +61,8 @@ export async function getAvailableSlots(
   const duration = service.duration
   const now = new Date()
 
-  for (let time = workStart; time + duration <= workEnd; time += duration) {
+  const slotInterval = Math.min(30, duration)
+  for (let time = workStart; time + duration <= workEnd; time += slotInterval) {
     const slotStart = new Date(date)
     slotStart.setUTCHours(0, 0, 0, 0)
     slotStart.setUTCMinutes(slotStart.getUTCMinutes() + time)
