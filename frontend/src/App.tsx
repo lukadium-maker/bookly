@@ -54,8 +54,11 @@ const toPersianNum = (n: number) =>
 
 const formatTime = (iso: string) => {
   const d = new Date(iso)
-  const h = d.getUTCHours().toString().padStart(2, '0')
-  const m = d.getUTCMinutes().toString().padStart(2, '0')
+  // Convert UTC to Tehran (UTC+3:30 = +210 minutes)
+  const tehranMs = d.getTime() + 210 * 60 * 1000
+  const tehran = new Date(tehranMs)
+  const h = tehran.getUTCHours().toString().padStart(2, '0')
+  const m = tehran.getUTCMinutes().toString().padStart(2, '0')
   return toPersianNum(parseInt(h)) + ':' + (m === '00' ? '۰۰' : toPersianNum(parseInt(m)))
 }
 
