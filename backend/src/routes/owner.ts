@@ -182,6 +182,45 @@ export async function ownerRoutes(app: FastifyInstance) {
     return service
   })
 
+  // Delete business
+  app.delete('/api/owner/business', async (request, reply) => {
+    const { telegramId } = request.body as { telegramId: string }
+
+    const user = await prisma.user.findUnique({ where: { telegramId } })
+    if (!user) return reply.status(404).send({ error: 'User not found' })
+
+    const business = await prisma.business.findFirst({ where: { ownerId: user.id } })
+    if (!business) return reply.status(404).send({ error: 'No business found' })
+
+    // Check no active appointments
+    const activeApts = await prisma.appointment.count({
+      where: {
+        businessId: business.id,
+        status: 'confirmed',
+        startTime: { gte: new Date() }
+      }
+    })
+
+    if (activeApts > 0) {
+      return reply.status(400).send({
+        error: 'ابتدا باید ' + activeApts + ' نوبت آینده را لغو کنید'
+      })
+    }
+
+    // Delete in order: reminders → appointments → working hours → closures → services → business
+    const appointments = await prisma.appointment.findMany({ where: { businessId: business.id } })
+    for (const apt of appointments) {
+      await prisma.reminder.deleteMany({ where: { appointmentId: apt.id } })
+    }
+    await prisma.appointment.deleteMany({ where: { businessId: business.id } })
+    await prisma.workingHours.deleteMany({ where: { businessId: business.id } })
+    await prisma.specialClosure.deleteMany({ where: { businessId: business.id } })
+    await prisma.service.deleteMany({ where: { businessId: business.id } })
+    await prisma.business.delete({ where: { id: business.id } })
+
+    return { success: true, message: 'کسب‌وکار با موفقیت حذف شد' }
+  })
+
   app.delete('/api/owner/services/:id', async (request, reply) => {
     const { id } = request.params as { id: string }
     const { telegramId } = request.body as { telegramId: string }

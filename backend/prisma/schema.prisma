@@ -28,6 +28,7 @@ model Business {
   category    String?
   timezone    String   @default("UTC")
   isActive    Boolean  @default(true) @map("is_active")
+  avatarUrl   String?  @map("avatar_url")
   ownerId     String   @map("owner_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

@@ -3,7 +3,7 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #0f0f13;
+  background: linear-gradient(160deg, #1A0003 0%, #0D0001 40%, #1A0003 70%, #0A0001 100%) fixed;
   color: #ffffff;
   min-height: 100vh;
   overflow-x: hidden;
@@ -759,4 +759,35 @@ body::before {
   font-size: 13px;
   color: rgba(255,255,255,0.5);
   line-height: 1.5;
+}
+
+.avatar-upload-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
+  cursor: pointer;
+}
+
+.business-avatar-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  object-fit: cover;
+  box-shadow: 0 8px 32px rgba(99,51,255,0.4);
+}
+
+.avatar-edit-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 26px;
+  height: 26px;
+  background: linear-gradient(135deg, #6333ff, #00b4ff);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }

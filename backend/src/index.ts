@@ -6,6 +6,7 @@ import { businessRoutes } from './routes/businesses'
 import { slotRoutes } from './routes/slots'
 import { appointmentRoutes } from './routes/appointments'
 import { ownerRoutes } from './routes/owner'
+import { uploadRoutes } from './routes/upload'
 import { bot } from './bot'
 import { processReminders } from './reminder'
 
@@ -27,7 +28,9 @@ app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, 
 app.register(businessRoutes)
 app.register(slotRoutes)
 app.register(appointmentRoutes)
+app.register(require('@fastify/multipart'))
 app.register(ownerRoutes)
+app.register(uploadRoutes)
 
 app.post('/webhook/bot', async (request, reply) => {
   try {

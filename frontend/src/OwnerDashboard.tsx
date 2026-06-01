@@ -54,7 +54,7 @@ interface WorkingHour {
   isActive: boolean
 }
 
-type OwnerScreen = 'home' | 'appointments' | 'detail' | 'services' | 'hours' | 'addService' | 'share'
+type OwnerScreen = 'home' | 'appointments' | 'detail' | 'services' | 'hours' | 'addService' | 'share' | 'settings'
 
 interface Props {
   telegramId: string
@@ -72,6 +72,12 @@ export default function OwnerDashboard({ telegramId }: Props) {
   const [error, setError] = useState('')
   const [hasNoBusiness, setHasNoBusiness] = useState(false)
   const [businessSlug, setBusinessSlug] = useState('')
+  const [businessName, setBusinessName] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [delError, setDelError] = useState('')
+  const [avatarTs, setAvatarTs] = useState(Date.now())
   // New service form
   const [newName, setNewName] = useState('')
   const [newDuration, setNewDuration] = useState('60')
@@ -94,6 +100,12 @@ export default function OwnerDashboard({ telegramId }: Props) {
       setServices(bizRes.data.services)
       setWorkingHours(bizRes.data.workingHours)
       setBusinessSlug(bizRes.data.slug || '')
+      setBusinessName(bizRes.data.name || '')
+      // Load avatar
+      try {
+        const avatarRes = await axios.get(API + '/owner/avatar', { params: { telegramId } })
+        setAvatarUrl(avatarRes.data.avatarUrl)
+      } catch {}
     } catch (err: any) {
       if (err.response?.status === 404) {
         setHasNoBusiness(true)
@@ -167,7 +179,39 @@ export default function OwnerDashboard({ telegramId }: Props) {
     return (
       <div className="screen" dir="rtl">
         <div className="header">
-          <div className="business-avatar">🏢</div>
+          <div className="avatar-upload-wrap" onClick={() => document.getElementById('avatar-input')?.click()}>
+            {avatarUrl ? (
+              <img src={'https://bookly.kindtoy.ir' + avatarUrl + '?t=' + avatarTs} className="business-avatar-img" alt="avatar" />
+            ) : (
+              <div className="business-avatar">🏢</div>
+            )}
+            <div className="avatar-edit-badge">{uploading ? '...' : '✏️'}</div>
+          </div>
+          <input
+            id="avatar-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: 'none' }}
+            onChange={async (e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              setUploading(true)
+              try {
+                const formData = new FormData()
+                formData.append('file', file)
+                const res = await axios.post(
+                  API + '/owner/upload-avatar?telegramId=' + telegramId,
+                  formData,
+                  { headers: { 'Content-Type': 'multipart/form-data' } }
+                )
+                setAvatarUrl(res.data.avatarUrl)
+                setAvatarTs(Date.now())
+              } catch {
+                alert('خطا در آپلود عکس')
+              }
+              setUploading(false)
+            }}
+          />
           <h1>پنل مدیریت</h1>
           <p>خوش آمدید!</p>
         </div>
@@ -222,6 +266,14 @@ export default function OwnerDashboard({ telegramId }: Props) {
           <button className="menu-btn" onClick={() => setScreen('hours')}>
             <span>⏰</span>
             <span>ساعات کاری</span>
+          </button>
+          <button className="menu-btn" onClick={() => setScreen('share')}>
+            <span>🔗</span>
+            <span>لینک رزرو نوبت</span>
+          </button>
+          <button className="menu-btn" onClick={() => setScreen('settings')}>
+            <span>⚙️</span>
+            <span>تنظیمات</span>
           </button>
         </div>
         <div className="section-title">لینک رزرو نوبت</div>
@@ -480,7 +532,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
   // SHARE SCREEN
   if (screen === 'share') {
     const bookingLink = 'https://t.me/bookly_ir_bot?start=' + businessSlug
-    const miniAppLink = 'https://bookly.kindtoy.ir/?business=' + businessSlug + '&v=14'
+    const miniAppLink = 'https://bookly.kindtoy.ir/app?business=' + businessSlug + '&v=25'
 
     return (
       <div className="screen" dir="rtl">
@@ -515,6 +567,63 @@ export default function OwnerDashboard({ telegramId }: Props) {
           <div className="share-info-row">💡 مشتریان با کلیک روی لینک می‌تونند نوبت بگیرند</div>
         </div>
 
+        <div className="bottom-padding" />
+      </div>
+    )
+  }
+
+  // SETTINGS SCREEN
+  if (screen === 'settings') {
+
+    const handleDelete = async () => {
+      if (!confirm('آیا مطمئن هستید؟\n\nاین کار غیرقابل برگشت است. همه سرویس‌ها و ساعات کاری حذف خواهند شد.')) return
+      setDeleting(true)
+      setDelError('')
+      try {
+        await axios.delete(API + '/owner/business', { data: { telegramId } })
+        alert('کسب‌وکار با موفقیت حذف شد')
+        window.location.reload()
+      } catch (err: any) {
+        setDelError(err.response?.data?.error || 'خطا در حذف')
+      }
+      setDeleting(false)
+    }
+
+    return (
+      <div className="screen" dir="rtl">
+        <button className="back-btn" onClick={() => setScreen('home')}>← بازگشت</button>
+        <div className="header">
+          <div className="business-avatar">⚙️</div>
+          <h1>تنظیمات</h1>
+        </div>
+
+        <div className="section-title">اطلاعات کسب‌وکار</div>
+        <div className="confirm-card">
+          <div className="confirm-row">
+            <span className="confirm-label">نام</span>
+            <span className="confirm-value">{businessName}</span>
+          </div>
+          <div className="confirm-row">
+            <span className="confirm-label">لینک</span>
+            <span className="confirm-value" style={{fontSize:'12px', color:'#a78bfa'}}>{businessSlug}</span>
+          </div>
+          <div className="confirm-row">
+            <span className="confirm-label">سرویس‌ها</span>
+            <span className="confirm-value">{services.length} سرویس</span>
+          </div>
+        </div>
+
+        <div className="section-title" style={{marginTop:'32px', color:'#ff6b6b'}}>منطقه خطرناک</div>
+        <div style={{background:'rgba(255,59,48,0.06)', border:'1px solid rgba(255,59,48,0.15)', borderRadius:'16px', padding:'20px', marginBottom:'12px'}}>
+          <div style={{fontSize:'15px', fontWeight:'700', marginBottom:'8px'}}>حذف کسب‌وکار</div>
+          <div style={{fontSize:'13px', color:'rgba(255,255,255,0.5)', lineHeight:'1.6', marginBottom:'16px'}}>
+            با حذف کسب‌وکار، همه سرویس‌ها، ساعات کاری و تاریخچه نوبت‌ها حذف خواهند شد. این عمل غیرقابل برگشت است.
+          </div>
+          {delError && <div className="error-msg">{delError}</div>}
+          <button className="cancel-btn" onClick={handleDelete} disabled={deleting}>
+            {deleting ? 'در حال حذف...' : 'حذف کسب‌وکار'}
+          </button>
+        </div>
         <div className="bottom-padding" />
       </div>
     )
