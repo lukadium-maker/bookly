@@ -18,6 +18,7 @@ interface Business {
   name: string
   description?: string
   category?: string
+  avatarUrl?: string
   services: Service[]
 }
 
@@ -170,7 +171,11 @@ export default function App() {
   if (screen === 'services') return (
     <div className="screen" dir="rtl">
       <div className="header">
-        <div className="business-avatar">✨</div>
+        {business?.avatarUrl ? (
+          <img src={'https://bookly.kindtoy.ir' + business.avatarUrl + '?t=' + Date.now()} className="business-avatar-img" alt="avatar" />
+        ) : (
+          <div className="business-avatar">✨</div>
+        )}
         <h1>{business?.name || 'رزرو نوبت'}</h1>
         {business?.description && <p>{business.description}</p>}
       </div>

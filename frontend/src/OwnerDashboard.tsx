@@ -179,14 +179,14 @@ export default function OwnerDashboard({ telegramId }: Props) {
     return (
       <div className="screen" dir="rtl">
         <div className="header">
-          <div className="avatar-upload-wrap" onClick={() => document.getElementById('avatar-input')?.click()}>
+          <label className="avatar-upload-wrap" htmlFor="avatar-input" style={{cursor:'pointer'}}>
             {avatarUrl ? (
               <img src={'https://bookly.kindtoy.ir' + avatarUrl + '?t=' + avatarTs} className="business-avatar-img" alt="avatar" />
             ) : (
               <div className="business-avatar">🏢</div>
             )}
             <div className="avatar-edit-badge">{uploading ? '...' : '✏️'}</div>
-          </div>
+          </label>
           <input
             id="avatar-input"
             type="file"
@@ -195,20 +195,47 @@ export default function OwnerDashboard({ telegramId }: Props) {
             onChange={async (e) => {
               const file = e.target.files?.[0]
               if (!file) return
-              setUploading(true)
-              try {
-                const formData = new FormData()
-                formData.append('file', file)
-                const res = await axios.post(
-                  API + '/owner/upload-avatar?telegramId=' + telegramId,
-                  formData,
-                  { headers: { 'Content-Type': 'multipart/form-data' } }
-                )
-                setAvatarUrl(res.data.avatarUrl)
-                setAvatarTs(Date.now())
-              } catch {
-                alert('خطا در آپلود عکس')
+              if (file.size > 5 * 1024 * 1024) {
+                alert('حجم عکس باید کمتر از 5 مگابایت باشد')
+                return
               }
+              setUploading(true)
+              // Resize image in browser before upload
+              const canvas = document.createElement('canvas')
+              const ctx = canvas.getContext('2d')!
+              const img = new Image()
+              img.onload = async () => {
+                const size = 400
+                canvas.width = size
+                canvas.height = size
+                const scale = Math.max(size / img.width, size / img.height)
+                const x = (size - img.width * scale) / 2
+                const y = (size - img.height * scale) / 2
+                ctx.drawImage(img, x, y, img.width * scale, img.height * scale)
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
+                const base64 = dataUrl.split(',')[1]
+                try {
+                  const response = await fetch(API + '/owner/upload-avatar-base64', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramId, base64, mimeType: 'image/jpeg' })
+                  })
+                  const res = await response.json()
+                  if (!response.ok) throw new Error(res.error || 'Upload failed')
+                  setAvatarUrl(res.avatarUrl)
+                  setAvatarTs(Date.now())
+                  alert('عکس با موفقیت آپلود شد!')
+                } catch (err: any) {
+                  alert('خطا: ' + (err.message || 'unknown'))
+                }
+                setUploading(false)
+                URL.revokeObjectURL(img.src)
+              }
+              img.onerror = () => {
+                alert('خطا در بارگذاری عکس')
+                setUploading(false)
+              }
+              img.src = URL.createObjectURL(file)
               setUploading(false)
             }}
           />

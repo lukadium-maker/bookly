@@ -43,13 +43,62 @@ export async function uploadRoutes(app: FastifyInstance) {
         .webp({ quality: 80 })
         .toFile(filepath)
 
-      const stats = fs.statSync(filepath)
-      console.log('Avatar compressed:', Math.round(stats.size / 1024) + 'KB')
+      const avatarUrl = '/uploads/businesses/' + filename
+      await (prisma.business as any).update({ where: { id: business.id }, data: { avatarUrl } })
+
+      return { avatarUrl, message: 'OK' }
+    } catch (err: any) {
+      console.error('Upload error:', err)
+      return reply.status(500).send({ error: err.message })
+    }
+  })
+
+  app.post('/api/owner/upload-avatar-base64', async (request: any, reply) => {
+    const { telegramId, base64, mimeType } = request.body as {
+      telegramId: string
+      base64: string
+      mimeType: string
+    }
+
+    if (!telegramId) return reply.status(400).send({ error: 'telegramId required' })
+
+    const user = await prisma.user.findUnique({ where: { telegramId } })
+    if (!user) return reply.status(404).send({ error: 'User not found' })
+
+    const business = await prisma.business.findFirst({ where: { ownerId: user.id } })
+    if (!business) return reply.status(404).send({ error: 'No business found' })
+
+    try {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+      if (!allowedTypes.includes(mimeType)) {
+        return reply.status(400).send({ error: 'Only JPEG PNG WebP allowed' })
+      }
+
+      const buffer = Buffer.from(base64, 'base64')
+
+      if (buffer.length > 5 * 1024 * 1024) {
+        return reply.status(400).send({ error: 'File too large' })
+      }
+
+      const uploadDir = '/root/app/uploads/businesses'
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
+
+      const oldFiles = fs.readdirSync(uploadDir).filter((f: string) => f.startsWith('business-' + business.id))
+      oldFiles.forEach((f: string) => { try { fs.unlinkSync(path.join(uploadDir, f)) } catch {} })
+
+      const filename = 'business-' + business.id + '.webp'
+      const filepath = path.join(uploadDir, filename)
+
+      await sharp(buffer)
+        .resize(400, 400, { fit: 'cover', position: 'center' })
+        .webp({ quality: 80 })
+        .toFile(filepath)
 
       const avatarUrl = '/uploads/businesses/' + filename
       await (prisma.business as any).update({ where: { id: business.id }, data: { avatarUrl } })
 
-      return { avatarUrl, message: 'OK', size: stats.size }
+      console.log('Avatar uploaded via base64')
+      return { avatarUrl, message: 'OK' }
     } catch (err: any) {
       console.error('Upload error:', err)
       return reply.status(500).send({ error: err.message })

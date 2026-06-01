@@ -29,7 +29,7 @@ bot.command('start', async (ctx) => {
       reply_markup: {
         inline_keyboard: [[{
           text: '\ud83d\udcc5 \u0631\u0632\u0631\u0648 \u0646\u0648\u0628\u062a',
-          web_app: { url: 'https://bookly.kindtoy.ir/app?business=' + startParam + '&v=26' }
+          web_app: { url: 'https://bookly.kindtoy.ir/app?business=' + startParam + '&v=36' }
         }]]
       }
     })
@@ -45,11 +45,11 @@ bot.command('start', async (ctx) => {
           inline_keyboard: [
             [{
               text: '\ud83d\udcc5 \u0631\u0632\u0631\u0648 \u0646\u0648\u0628\u062a',
-              web_app: { url: 'https://bookly.kindtoy.ir/app?business=' + business.slug + '&v=26' }
+              web_app: { url: 'https://bookly.kindtoy.ir/app?business=' + business.slug + '&v=36' }
             }],
             [{
               text: '\ud83c\udfe2 \u067e\u0646\u0644 \u0645\u062f\u06cc\u0631\u06cc\u062a',
-              web_app: { url: 'https://bookly.kindtoy.ir/app?mode=owner&v=26' }
+              web_app: { url: 'https://bookly.kindtoy.ir/app?mode=owner&v=36' }
             }]
           ]
         }
@@ -60,7 +60,7 @@ bot.command('start', async (ctx) => {
         reply_markup: {
           inline_keyboard: [[{
             text: '\ud83c\udfe2 \u062b\u0628\u062a \u06a9\u0633\u0628\u200c\u0648\u06a9\u0627\u0631',
-            web_app: { url: 'https://bookly.kindtoy.ir/app?mode=owner&v=26' }
+            web_app: { url: 'https://bookly.kindtoy.ir/app?mode=owner&v=36' }
           }]]
         }
       })
