@@ -2,15 +2,11 @@ import { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import path from 'path'
 import fs from 'fs'
-import { pipeline } from 'stream/promises'
+import sharp from 'sharp'
 
 export async function uploadRoutes(app: FastifyInstance) {
 
-  // Upload avatar using raw multipart
-  app.post('/api/owner/upload-avatar', {
-    config: { rawBody: true }
-  }, async (request: any, reply) => {
-
+  app.post('/api/owner/upload-avatar', async (request: any, reply) => {
     const { telegramId } = request.query as { telegramId: string }
     if (!telegramId) return reply.status(400).send({ error: 'telegramId required' })
 
@@ -26,30 +22,34 @@ export async function uploadRoutes(app: FastifyInstance) {
 
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
       if (!allowedTypes.includes(data.mimetype)) {
-        return reply.status(400).send({ error: 'Only JPEG, PNG and WebP images allowed' })
+        return reply.status(400).send({ error: 'Only JPEG PNG WebP allowed' })
       }
 
-      const ext = data.mimetype === 'image/png' ? '.png' : data.mimetype === 'image/webp' ? '.webp' : '.jpg'
-      const filename = 'business-' + business.id + ext
       const uploadDir = '/root/app/uploads/businesses'
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
 
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true })
-      }
-
-      // Delete old files
       const oldFiles = fs.readdirSync(uploadDir).filter((f: string) => f.startsWith('business-' + business.id))
-      oldFiles.forEach((f: string) => {
-        try { fs.unlinkSync(path.join(uploadDir, f)) } catch {}
-      })
+      oldFiles.forEach((f: string) => { try { fs.unlinkSync(path.join(uploadDir, f)) } catch {} })
 
+      const chunks: Buffer[] = []
+      for await (const chunk of data.file) chunks.push(chunk)
+      const buffer = Buffer.concat(chunks)
+
+      const filename = 'business-' + business.id + '.webp'
       const filepath = path.join(uploadDir, filename)
-      await pipeline(data.file, fs.createWriteStream(filepath))
+
+      await sharp(buffer)
+        .resize(400, 400, { fit: 'cover', position: 'center' })
+        .webp({ quality: 80 })
+        .toFile(filepath)
+
+      const stats = fs.statSync(filepath)
+      console.log('Avatar compressed:', Math.round(stats.size / 1024) + 'KB')
 
       const avatarUrl = '/uploads/businesses/' + filename
       await (prisma.business as any).update({ where: { id: business.id }, data: { avatarUrl } })
 
-      return { avatarUrl, message: 'OK' }
+      return { avatarUrl, message: 'OK', size: stats.size }
     } catch (err: any) {
       console.error('Upload error:', err)
       return reply.status(500).send({ error: err.message })
