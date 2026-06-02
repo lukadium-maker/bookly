@@ -54,7 +54,7 @@ interface WorkingHour {
   isActive: boolean
 }
 
-type OwnerScreen = 'home' | 'appointments' | 'detail' | 'services' | 'hours' | 'addService' | 'share' | 'settings' | 'editBusiness'
+type OwnerScreen = 'selectBusiness' | 'home' | 'appointments' | 'detail' | 'services' | 'hours' | 'addService' | 'share' | 'settings' | 'editBusiness'
 
 interface Props {
   telegramId: string
@@ -71,6 +71,8 @@ export default function OwnerDashboard({ telegramId }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [hasNoBusiness, setHasNoBusiness] = useState(false)
+  const [businesses, setBusinesses] = useState<any[]>([])
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null)
   const [businessSlug, setBusinessSlug] = useState('')
   const [businessName, setBusinessName] = useState('')
   const [editName, setEditName] = useState('')
@@ -93,13 +95,41 @@ export default function OwnerDashboard({ telegramId }: Props) {
     loadDashboard()
   }, [])
 
-  const loadDashboard = async () => {
+
+
+  const loadDashboard = async (bizId?: string) => {
+    const activeBizId = bizId || selectedBusinessId || undefined
     setLoading(true)
     try {
+      // Load all businesses first
+      const allBizRes = await axios.get(API + '/owner/businesses', { params: { telegramId } })
+      setBusinesses(allBizRes.data.businesses || [])
+      if ((allBizRes.data.businesses || []).length === 0) {
+        setHasNoBusiness(true)
+        setLoading(false)
+        return
+      }
+      const bizList = allBizRes.data.businesses || []
+      if (bizList.length > 1 && !activeBizId) {
+        setScreen('selectBusiness')
+        setLoading(false)
+        return
+      }
+      // If selectedBusinessId is set, use that business
+      if (activeBizId) {
+        const selBiz = bizList.find((b: any) => b.id === activeBizId)
+        if (selBiz) {
+          setBusinessSlug(selBiz.slug || '')
+          setBusinessName(selBiz.name || '')
+          setEditName(selBiz.name || '')
+          setServices(selBiz.services || [])
+        }
+      }
+
       const [todayRes, allRes, bizRes] = await Promise.all([
-        axios.get(API + '/owner/appointments', { params: { telegramId, filter: 'today' } }),
-        axios.get(API + '/owner/appointments', { params: { telegramId, filter: 'upcoming' } }),
-        axios.get(API + '/owner/business', { params: { telegramId } })
+        axios.get(API + '/owner/appointments', { params: { telegramId, filter: 'today', businessId: activeBizId } }),
+        axios.get(API + '/owner/appointments', { params: { telegramId, filter: 'upcoming', businessId: activeBizId } }),
+        (() => { console.log('Loading business with activeBizId:', activeBizId); return axios.get(API + '/owner/business', { params: { telegramId, businessId: activeBizId } }) })()
       ])
       setTodayApts(todayRes.data.appointments)
       setAppointments(allRes.data.appointments)
@@ -249,7 +279,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
               setUploading(false)
             }}
           />
-          <h1>پنل مدیریت</h1>
+          <h1>{businessName || 'پنل مدیریت'}</h1>
           <p>خوش آمدید!</p>
         </div>
 
@@ -444,7 +474,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
             </button>
           </div>
         ))}
-        <button className="main-btn" onClick={() => setScreen('addService')}>
+        <button className="main-btn" onClick={() => { setScreen('addService'); setError('') }}>
           + افزودن سرویس
         </button>
         <div className="bottom-padding" />
@@ -579,7 +609,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
   // SHARE SCREEN
   if (screen === 'share') {
     const bookingLink = 'https://t.me/bookly_ir_bot?start=' + businessSlug
-    const miniAppLink = 'https://bookly.kindtoy.ir/app?business=' + businessSlug + '&v=25'
+    const miniAppLink = 'https://bookly.kindtoy.ir/app?business=' + businessSlug + '&v=58'
 
     return (
       <div className="screen" dir="rtl">
@@ -627,7 +657,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       setDeleting(true)
       setDelError('')
       try {
-        await axios.delete(API + '/owner/business', { data: { telegramId } })
+        await axios.delete(API + '/owner/business', { data: { telegramId, businessId: selectedBusinessId || undefined } })
         alert('کسب‌وکار با موفقیت حذف شد')
         window.location.reload()
       } catch (err: any) {
@@ -664,7 +694,13 @@ export default function OwnerDashboard({ telegramId }: Props) {
           </div>
         </div>
 
-        <div className="section-title" style={{marginTop:'32px', color:'#ff6b6b'}}>منطقه خطرناک</div>
+        <div className="section-title" style={{marginTop:'16px'}}>کسب‌وکار جدید</div>
+        <button className="menu-btn" onClick={() => setHasNoBusiness(true)} style={{marginBottom:'24px'}}>
+          <span>➕</span>
+          <span>اضافه کردن کسب‌وکار جدید</span>
+        </button>
+
+        <div className="section-title" style={{marginTop:'8px', color:'#ff6b6b'}}>منطقه خطرناک</div>
         <div style={{background:'rgba(255,59,48,0.06)', border:'1px solid rgba(255,59,48,0.15)', borderRadius:'16px', padding:'20px', marginBottom:'12px'}}>
           <div style={{fontSize:'15px', fontWeight:'700', marginBottom:'8px'}}>حذف کسب‌وکار</div>
           <div style={{fontSize:'13px', color:'rgba(255,255,255,0.5)', lineHeight:'1.6', marginBottom:'16px'}}>
@@ -762,6 +798,49 @@ export default function OwnerDashboard({ telegramId }: Props) {
         <button className="main-btn" onClick={handleSave} disabled={editSaving}>
           {editSaving ? 'در حال ذخیره‌سازی...' : 'ذخیره‌سازی'}
         </button>
+        <div className="bottom-padding" />
+      </div>
+    )
+  }
+
+  // SELECT BUSINESS SCREEN
+  if (screen === 'selectBusiness') {
+    return (
+      <div className="screen" dir="rtl">
+        <div className="header">
+          <div className="business-avatar">🏢</div>
+          <h1>کسب‌وکار خود را انتخاب کنید</h1>
+          <p>برای مدیریت کدام کسب‌وکار وارد شوید؟</p>
+        </div>
+
+        <div className="menu-grid">
+          {businesses.map(biz => (
+            <button
+              key={biz.id}
+              className="menu-btn"
+              onClick={async () => {
+                setSelectedBusinessId(biz.id)
+                setScreen('home')
+                loadDashboard(biz.id)
+              }}
+            >
+              {biz.avatarUrl ? (
+                <img src={'https://bookly.kindtoy.ir' + biz.avatarUrl} style={{width:'32px',height:'32px',borderRadius:'8px',objectFit:'cover'}} alt="" />
+              ) : (
+                <span>🏢</span>
+              )}
+              <span>{biz.name}</span>
+            </button>
+          ))}
+        </div>
+
+        <div style={{marginTop:'24px'}}>
+          <button className="main-btn" onClick={() => {
+            setHasNoBusiness(true)
+          }}>
+            ➕ کسب‌وکار جدید
+          </button>
+        </div>
         <div className="bottom-padding" />
       </div>
     )

@@ -89,7 +89,7 @@ export default function App() {
 
   // If owner mode, show dashboard
   if (mode === 'owner') {
-    return <OwnerDashboard telegramId={telegramId} businessSlug={businessSlug} />
+    return <OwnerDashboard telegramId={telegramId} businessSlug={''} />
   }
 
   const [screen, setScreen] = useState<Screen>('loading')

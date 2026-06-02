@@ -4,13 +4,26 @@ import { bot } from '../bot'
 
 export async function ownerRoutes(app: FastifyInstance) {
 
+
+ app.get('/api/owner/businesses', async (request, reply) => {
+   const { telegramId } = request.query as { telegramId: string }
+   const user = await prisma.user.findUnique({ where: { telegramId } })
+   if (!user) return reply.status(404).send({ error: 'User not found' })
+   const businesses = await prisma.business.findMany({
+     where: { ownerId: user.id },
+     include: { services: { where: { isActive: true } } },
+     orderBy: { createdAt: 'asc' }
+   })
+   return { businesses }
+ })
+
   app.get('/api/owner/business', async (request, reply) => {
-    const { telegramId } = request.query as { telegramId: string }
+    const { telegramId, businessId } = request.query as { telegramId: string, businessId?: string }
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
 
     const business = await prisma.business.findFirst({
-      where: { ownerId: user.id },
+      where: businessId ? { id: businessId, ownerId: user.id } : { ownerId: user.id },
       include: {
         services: { where: { isActive: true }, orderBy: { displayOrder: 'asc' } },
         workingHours: { orderBy: { dayOfWeek: 'asc' } }
@@ -31,9 +44,6 @@ export async function ownerRoutes(app: FastifyInstance) {
 
     let user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
-
-    const existing = await prisma.business.findFirst({ where: { ownerId: user.id } })
-    if (existing) return reply.status(409).send({ error: 'Business already exists' })
 
     const timestamp = Date.now().toString(36)
     let baseSlug = name
@@ -63,11 +73,11 @@ export async function ownerRoutes(app: FastifyInstance) {
   })
 
   app.get('/api/owner/appointments', async (request, reply) => {
-    const { telegramId, filter } = request.query as { telegramId: string, filter?: string }
+    const { telegramId, filter, businessId } = request.query as { telegramId: string, filter?: string, businessId?: string }
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
 
-    const business = await prisma.business.findFirst({ where: { ownerId: user.id } })
+    const business = await prisma.business.findFirst({ where: businessId ? { id: businessId, ownerId: user.id } : { ownerId: user.id } })
     if (!business) return reply.status(404).send({ error: 'No business found' })
 
     const now = new Date()
@@ -167,8 +177,8 @@ export async function ownerRoutes(app: FastifyInstance) {
   })
 
   app.post('/api/owner/services', async (request, reply) => {
-    const { telegramId, name, duration, price } = request.body as {
-      telegramId: string, name: string, duration: number, price: number
+    const { telegramId, name, duration, price, breakTime } = request.body as {
+      telegramId: string, name: string, duration: number, price: number, breakTime?: number
     }
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
@@ -177,7 +187,7 @@ export async function ownerRoutes(app: FastifyInstance) {
     if (!business) return reply.status(404).send({ error: 'No business found' })
 
     const service = await prisma.service.create({
-      data: { businessId: business.id, name, duration, price }
+      data: { businessId: business.id, name, duration, price, break_time: breakTime || 0 } as any
     })
     return service
   })
@@ -211,12 +221,12 @@ export async function ownerRoutes(app: FastifyInstance) {
 
   // Delete business
   app.delete('/api/owner/business', async (request, reply) => {
-    const { telegramId } = request.body as { telegramId: string }
+    const { telegramId, businessId } = request.body as { telegramId: string, businessId?: string }
 
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
 
-    const business = await prisma.business.findFirst({ where: { ownerId: user.id } })
+    const business = await prisma.business.findFirst({ where: businessId ? { id: businessId, ownerId: user.id } : { ownerId: user.id } })
     if (!business) return reply.status(404).send({ error: 'No business found' })
 
     // Check no active appointments

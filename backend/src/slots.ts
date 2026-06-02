@@ -78,10 +78,12 @@ export async function getAvailableSlots(
   const workStart = startHour * 60 + startMin
   const workEnd = endHour * 60 + endMin
   const duration = service.duration
+  const breakTime = (service as any).break_time || 0
+  const totalBlock = duration + breakTime
   const slotInterval = Math.min(30, duration)
   const now = new Date()
 
-  for (let time = workStart; time + duration <= workEnd; time += slotInterval) {
+  for (let time = workStart; time + totalBlock <= workEnd; time += slotInterval) {
     // Convert working time to UTC
     const slotStart = new Date(tehranMidnight)
     slotStart.setUTCMinutes(slotStart.getUTCMinutes() + time)

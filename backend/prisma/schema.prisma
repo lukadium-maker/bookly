@@ -7,67 +7,65 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  telegramId String   @unique @map("telegram_id")
-  firstName  String   @map("first_name")
-  lastName   String?  @map("last_name")
-  username   String?
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  ownedBusinesses Business[]
+  id              String        @id @default(uuid())
+  telegramId      String        @unique @map("telegram_id")
+  firstName       String        @map("first_name")
+  lastName        String?       @map("last_name")
+  username        String?
+  createdAt       DateTime      @default(now()) @map("created_at")
   appointments    Appointment[] @relation("ClientAppointments")
+  ownedBusinesses Business[]
 
   @@map("users")
 }
 
 model Business {
-  id          String   @id @default(uuid())
-  slug        String   @unique
-  name        String
-  description String?
-  category    String?
-  timezone    String   @default("UTC")
-  isActive    Boolean  @default(true) @map("is_active")
-  avatarUrl   String?  @map("avatar_url")
-  ownerId     String   @map("owner_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
+  id           String           @id @default(uuid())
+  slug         String           @unique
+  name         String
+  description  String?
+  category     String?
+  timezone     String           @default("UTC")
+  isActive     Boolean          @default(true) @map("is_active")
+  ownerId      String           @map("owner_id")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  avatarUrl    String?          @map("avatar_url")
+  breakTime    Int              @default(0) @map("break_time")
+  appointments Appointment[]
   owner        User             @relation(fields: [ownerId], references: [id])
   services     Service[]
-  workingHours WorkingHours[]
-  appointments Appointment[]
   closures     SpecialClosure[]
+  workingHours WorkingHours[]
 
   @@map("businesses")
 }
 
 model Service {
-  id           String   @id @default(uuid())
-  businessId   String   @map("business_id")
+  id           String        @id @default(uuid())
+  businessId   String        @map("business_id")
   name         String
   description  String?
   duration     Int
-  price        Int      @default(0)
-  isActive     Boolean  @default(true) @map("is_active")
-  displayOrder Int      @default(0) @map("display_order")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  business     Business      @relation(fields: [businessId], references: [id])
+  price        Int           @default(0)
+  isActive     Boolean       @default(true) @map("is_active")
+  displayOrder Int           @default(0) @map("display_order")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  break_time   Int           @default(0)
   appointments Appointment[]
+  business     Business      @relation(fields: [businessId], references: [id])
 
   @@map("services")
 }
 
 model WorkingHours {
-  id         String  @id @default(uuid())
-  businessId String  @map("business_id")
-  dayOfWeek  Int     @map("day_of_week")
-  startTime  String  @map("start_time")
-  endTime    String  @map("end_time")
-  isActive   Boolean @default(true) @map("is_active")
-
-  business Business @relation(fields: [businessId], references: [id])
+  id         String   @id @default(uuid())
+  businessId String   @map("business_id")
+  dayOfWeek  Int      @map("day_of_week")
+  startTime  String   @map("start_time")
+  endTime    String   @map("end_time")
+  isActive   Boolean  @default(true) @map("is_active")
+  business   Business @relation(fields: [businessId], references: [id])
 
   @@unique([businessId, dayOfWeek])
   @@map("working_hours")
@@ -79,31 +77,29 @@ model SpecialClosure {
   date       DateTime
   reason     String?
   createdAt  DateTime @default(now()) @map("created_at")
-
-  business Business @relation(fields: [businessId], references: [id])
+  business   Business @relation(fields: [businessId], references: [id])
 
   @@map("special_closures")
 }
 
 model Appointment {
-  id          String    @id @default(uuid())
-  businessId  String    @map("business_id")
-  serviceId   String    @map("service_id")
-  clientId    String    @map("client_id")
-  staffId     String?   @map("staff_id")
-  startTime   DateTime  @map("start_time")
-  endTime     DateTime  @map("end_time")
-  status      String    @default("confirmed")
-  clientNote  String?   @map("client_note")
-  ownerNote   String?   @map("owner_note")
-  cancelledBy String?   @map("cancelled_by")
-  cancelledAt DateTime? @map("cancelled_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-
-  business  Business   @relation(fields: [businessId], references: [id])
-  service   Service    @relation(fields: [serviceId], references: [id])
-  client    User       @relation("ClientAppointments", fields: [clientId], references: [id])
-  reminders Reminder[]
+  id          String     @id @default(uuid())
+  businessId  String     @map("business_id")
+  serviceId   String     @map("service_id")
+  clientId    String     @map("client_id")
+  staffId     String?    @map("staff_id")
+  startTime   DateTime   @map("start_time")
+  endTime     DateTime   @map("end_time")
+  status      String     @default("confirmed")
+  clientNote  String?    @map("client_note")
+  ownerNote   String?    @map("owner_note")
+  cancelledBy String?    @map("cancelled_by")
+  cancelledAt DateTime?  @map("cancelled_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  business    Business   @relation(fields: [businessId], references: [id])
+  client      User       @relation("ClientAppointments", fields: [clientId], references: [id])
+  service     Service    @relation(fields: [serviceId], references: [id])
+  reminders   Reminder[]
 
   @@index([businessId, startTime])
   @@index([clientId, status])
@@ -111,14 +107,13 @@ model Appointment {
 }
 
 model Reminder {
-  id            String    @id @default(uuid())
-  appointmentId String    @map("appointment_id")
+  id            String      @id @default(uuid())
+  appointmentId String      @map("appointment_id")
   type          String
-  scheduledFor  DateTime  @map("scheduled_for")
-  sentAt        DateTime? @map("sent_at")
-  status        String    @default("pending")
-
-  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  scheduledFor  DateTime    @map("scheduled_for")
+  sentAt        DateTime?   @map("sent_at")
+  status        String      @default("pending")
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
 
   @@index([scheduledFor, status])
   @@map("reminders")
