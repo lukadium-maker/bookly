@@ -118,7 +118,8 @@ export default function App() {
     setLoading(true)
     setSlots([])
     try {
-      const dateStr = date.toISOString().split('T')[0]
+      // Use local date to avoid UTC timezone shift
+      const dateStr = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0')
       const res = await axios.get(API + '/businesses/' + businessSlug + '/slots', {
         params: { serviceId: service.id, date: dateStr }
       })

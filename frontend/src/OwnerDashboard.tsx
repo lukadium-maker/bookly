@@ -87,6 +87,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
   const [newName, setNewName] = useState('')
   const [newDuration, setNewDuration] = useState('60')
   const [newPrice, setNewPrice] = useState('0')
+  const [newBreakTime, setNewBreakTime] = useState('0')
 
   useEffect(() => {
     loadDashboard()
@@ -153,7 +154,8 @@ export default function OwnerDashboard({ telegramId }: Props) {
         telegramId,
         name: newName,
         duration: parseInt(newDuration),
-        price: parseInt(newPrice) || 0
+        price: parseInt(newPrice) || 0,
+        breakTime: parseInt(newBreakTime) || 0
       })
       setNewName('')
       setNewDuration('60')
@@ -486,6 +488,16 @@ export default function OwnerDashboard({ telegramId }: Props) {
             placeholder="0"
             value={newPrice}
             onChange={e => setNewPrice(e.target.value)}
+          />
+        </div>
+        <div className="form-group">
+          <div className="form-label">زمان استراحت بعد از سرویس (دقیقه)</div>
+          <input
+            className="form-input"
+            type="number"
+            placeholder="0"
+            value={newBreakTime}
+            onChange={e => setNewBreakTime(e.target.value)}
           />
         </div>
         {error && <div className="error-msg">{error}</div>}
