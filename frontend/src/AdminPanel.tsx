@@ -12,6 +12,7 @@ document.head.appendChild(style)
 export default function AdminPanel({ telegramId }: { telegramId: string }) {
   const [businesses, setBusinesses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [backupLoading, setBackupLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -27,7 +28,37 @@ export default function AdminPanel({ telegramId }: { telegramId: string }) {
   return (
     <div style={{background:'#1A0003',minHeight:'100vh',padding:'24px',fontFamily:'Vazirmatn,sans-serif',direction:'rtl',color:'white'}}>
       <h1 style={{fontSize:'24px',fontWeight:'900',color:'#C9A84C',marginBottom:'8px'}}>پنل ادمین بوکلی</h1>
-      <p style={{color:'rgba(255,255,255,0.4)',marginBottom:'24px',fontSize:'13px'}}>{businesses.length} کسب‌وکار ثبت شده</p>
+      <p style={{color:'rgba(255,255,255,0.4)',marginBottom:'16px',fontSize:'13px'}}>{businesses.length} کسب‌وکار ثبت شده</p>
+      <button
+        onClick={async () => {
+          setBackupLoading(true)
+          try {
+            const res = await fetch(API + '/admin/backup?telegramId=' + telegramId)
+            const data = await res.json()
+            // Copy URL to clipboard
+            navigator.clipboard.writeText(data.url).then(() => {
+              alert('لینک کپی شد!\n\n' + data.url + '\n\nاین لینک را در مرورگر باز کنید و فایل را دانلود کنید')
+            }).catch(() => {
+              alert('لینک backup:\n' + data.url)
+            })
+          } catch { alert('خطا در دریافت backup') }
+          setBackupLoading(false)
+        }}
+        style={{
+          background:'linear-gradient(135deg,#C9A84C,#E8C97A)',
+          color:'#1A0003',
+          border:'none',
+          borderRadius:'12px',
+          padding:'12px 24px',
+          fontWeight:'800',
+          fontSize:'14px',
+          cursor:'pointer',
+          marginBottom:'24px',
+          fontFamily:'Vazirmatn,sans-serif'
+        }}
+      >
+        {backupLoading ? 'در حال آماده‌سازی...' : '⬇️ دانلود Backup دیتابیس'}
+      </button>
 
       {businesses.map(biz => (
         <div key={biz.id} style={{

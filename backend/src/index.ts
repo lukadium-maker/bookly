@@ -7,6 +7,7 @@ import { slotRoutes } from './routes/slots'
 import { appointmentRoutes } from './routes/appointments'
 import { ownerRoutes } from './routes/owner'
 import { uploadRoutes } from './routes/upload'
+import { blockedSlotRoutes } from './routes/blockedSlots'
 import { bot } from './bot'
 import { processReminders } from './reminder'
 
@@ -31,6 +32,7 @@ app.register(appointmentRoutes)
 app.register(require('@fastify/multipart'))
 app.register(ownerRoutes)
 app.register(uploadRoutes)
+  app.register(blockedSlotRoutes)
 
 app.post('/webhook/bot', async (request, reply) => {
   try {

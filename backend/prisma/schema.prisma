@@ -37,6 +37,7 @@ model Business {
   services     Service[]
   closures     SpecialClosure[]
   workingHours WorkingHours[]
+  blockedSlots BlockedSlot[]
 
   @@map("businesses")
 }
@@ -117,4 +118,16 @@ model Reminder {
 
   @@index([scheduledFor, status])
   @@map("reminders")
+}
+
+model BlockedSlot {
+  id         String   @id @default(uuid())
+  businessId String   @map("business_id")
+  date       String // YYYY-MM-DD
+  slotTime   String   @map("slot_time") // HH:MM
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@map("blocked_slots")
 }

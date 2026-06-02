@@ -54,7 +54,7 @@ interface WorkingHour {
   isActive: boolean
 }
 
-type OwnerScreen = 'selectBusiness' | 'home' | 'appointments' | 'detail' | 'services' | 'hours' | 'addService' | 'share' | 'settings' | 'editBusiness'
+type OwnerScreen = 'selectBusiness' | 'home' | 'appointments' | 'detail' | 'services' | 'hours' | 'addService' | 'share' | 'settings' | 'editBusiness' | 'editService' | 'manageSlots'
 
 interface Props {
   telegramId: string
@@ -79,6 +79,14 @@ export default function OwnerDashboard({ telegramId }: Props) {
   const [editDesc, setEditDesc] = useState('')
   const [editCategory, setEditCategory] = useState('')
   const [editSaving, setEditSaving] = useState(false)
+  const [editingService, setEditingService] = useState<any>(null)
+  const [slotsDate, setSlotsDate] = useState('')
+  const [blockedSlots, setBlockedSlots] = useState<string[]>([])
+  const [slotsLoading, setSlotsLoading] = useState(false)
+  const [editServiceName, setEditServiceName] = useState('')
+  const [editServiceDuration, setEditServiceDuration] = useState('')
+  const [editServicePrice, setEditServicePrice] = useState('')
+  const [editServiceBreak, setEditServiceBreak] = useState('')
   const [editError, setEditError] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -335,6 +343,10 @@ export default function OwnerDashboard({ telegramId }: Props) {
             <span>⏰</span>
             <span>ساعات کاری</span>
           </button>
+          <button className="menu-btn" onClick={() => setScreen('manageSlots')}>
+            <span>🚫</span>
+            <span>مسدود کردن ساعات</span>
+          </button>
           <button className="menu-btn" onClick={() => setScreen('share')}>
             <span>🔗</span>
             <span>لینک رزرو نوبت</span>
@@ -467,12 +479,28 @@ export default function OwnerDashboard({ telegramId }: Props) {
                 <div className="service-meta">{toPersianNum(s.duration)} دقیقه · {formatPrice(s.price)}</div>
               </div>
             </div>
-            <button
-              className="delete-btn"
-              onClick={() => { if (confirm('حذف شود؟')) deleteService(s.id) }}
-            >
-              حذف
-            </button>
+            <div style={{display:'flex',gap:'8px'}}>
+              <button
+                className="delete-btn"
+                style={{background:'rgba(99,51,255,0.2)',color:'#a78bfa'}}
+                onClick={() => {
+                  setEditingService(s)
+                  setEditServiceName(s.name)
+                  setEditServiceDuration(String(s.duration))
+                  setEditServicePrice(String(s.price))
+                  setEditServiceBreak(String((s as any).break_time || 0))
+                  setScreen('editService')
+                }}
+              >
+                ویرایش
+              </button>
+              <button
+                className="delete-btn"
+                onClick={() => { if (confirm('حذف شود؟')) deleteService(s.id) }}
+              >
+                حذف
+              </button>
+            </div>
           </div>
         ))}
         <button className="main-btn" onClick={() => { setScreen('addService'); setError('') }}>
@@ -842,6 +870,188 @@ export default function OwnerDashboard({ telegramId }: Props) {
             ➕ کسب‌وکار جدید
           </button>
         </div>
+        <div className="bottom-padding" />
+      </div>
+    )
+  }
+
+  // EDIT SERVICE SCREEN
+  if (screen === 'editService' && editingService) {
+    const handleEditService = async () => {
+      if (!editServiceName || !editServiceDuration) return
+      setEditSaving(true)
+      try {
+        await axios.patch(API + '/owner/services/' + editingService.id, {
+          telegramId,
+          name: editServiceName,
+          duration: parseInt(editServiceDuration),
+          price: parseInt(editServicePrice) || 0,
+          breakTime: parseInt(editServiceBreak) || 0
+        })
+        await loadDashboard(selectedBusinessId || undefined)
+        setScreen('services')
+      } catch {
+        alert('خطا در ویرایش')
+      }
+      setEditSaving(false)
+    }
+
+    return (
+      <div className="screen" dir="rtl">
+        <button className="back-btn" onClick={() => setScreen('services')}>← بازگشت</button>
+        <div className="header">
+          <div className="business-avatar">✏️</div>
+          <h1>ویرایش سرویس</h1>
+        </div>
+
+        <div className="form-group">
+          <div className="form-label">نام سرویس</div>
+          <input className="form-input" value={editServiceName} onChange={e => setEditServiceName(e.target.value)} placeholder="نام سرویس" />
+        </div>
+
+        <div className="form-group">
+          <div className="form-label">مدت زمان (دقیقه)</div>
+          <input className="form-input" type="number" value={editServiceDuration} onChange={e => setEditServiceDuration(e.target.value)} />
+        </div>
+
+        <div className="form-group">
+          <div className="form-label">قیمت (تومان)</div>
+          <input className="form-input" type="number" value={editServicePrice} onChange={e => setEditServicePrice(e.target.value)} />
+        </div>
+
+        <div className="form-group">
+          <div className="form-label">زمان استراحت بعد از سرویس (دقیقه)</div>
+          <input className="form-input" type="number" value={editServiceBreak} onChange={e => setEditServiceBreak(e.target.value)} />
+        </div>
+
+        <button className="main-btn" onClick={handleEditService} disabled={editSaving}>
+          {editSaving ? 'در حال ذخیره‌سازی...' : 'ذخیره‌سازی'}
+        </button>
+        <div className="bottom-padding" />
+      </div>
+    )
+  }
+
+  // MANAGE SLOTS SCREEN
+  if (screen === 'manageSlots') {
+    const loadBlockedSlots = async (date: string) => {
+      setSlotsLoading(true)
+      try {
+        const res = await axios.get(API + '/owner/blocked-slots', { params: { telegramId, date } })
+        setBlockedSlots(res.data.blocked || [])
+      } catch {}
+      setSlotsLoading(false)
+    }
+
+    const toggleSlot = async (slotTime: string) => {
+      try {
+        const res = await axios.post(API + '/owner/blocked-slots', {
+          telegramId, date: slotsDate, slotTime, businessId: selectedBusinessId || undefined
+        })
+        if (res.data.blocked) {
+          setBlockedSlots(prev => [...prev, slotTime])
+        } else {
+          setBlockedSlots(prev => prev.filter(s => s !== slotTime))
+        }
+      } catch (err: any) {
+        alert(err.response?.data?.error || '\خ\ط\ا')
+      }
+    }
+
+    // Generate 30-min slots from working hours
+    const generateSlots = () => {
+      const slots = []
+      for (let h = 9; h < 18; h++) {
+        slots.push(h.toString().padStart(2,'0') + ':00')
+        slots.push(h.toString().padStart(2,'0') + ':30')
+      }
+      return slots
+    }
+
+    return (
+      <div className="screen" dir="rtl">
+        <button className="back-btn" onClick={() => setScreen('home')}>← بازگشت</button>
+        <div className="header">
+          <div className="business-avatar">🚫</div>
+          <h1>مسدود کردن ساعات</h1>
+          <p>اسلاتی که نمیخواید رزرو بشن را ببندید</p>
+        </div>
+
+        <div className="section-title">انتخاب تاریخ</div>
+        <div style={{display:'flex',gap:'8px',marginBottom:'24px',flexWrap:'wrap'}}>
+          {[0,1,2,3,4,5,6].map(offset => {
+            const d = new Date()
+            d.setDate(d.getDate() + offset)
+            const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0')
+            const jalali = jalaali.toJalaali(d.getFullYear(), d.getMonth()+1, d.getDate())
+            const dayNames = ['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه']
+            const dayName = offset === 0 ? 'امروز' : offset === 1 ? 'فردا' : dayNames[d.getDay()]
+            const isSelected = slotsDate === dateStr
+            return (
+              <button
+                key={dateStr}
+                onClick={async () => { setSlotsDate(dateStr); await loadBlockedSlots(dateStr) }}
+                style={{
+                  padding:'10px 14px',
+                  borderRadius:'12px',
+                  border: isSelected ? '2px solid #6333ff' : '1px solid rgba(255,255,255,0.1)',
+                  background: isSelected ? 'rgba(99,51,255,0.2)' : 'rgba(255,255,255,0.04)',
+                  color: 'white',
+                  fontSize:'13px',
+                  fontWeight: isSelected ? '800' : '400',
+                  cursor:'pointer',
+                  fontFamily:'Vazirmatn,sans-serif',
+                  textAlign:'center'
+                }}
+              >
+                <div>{dayName}</div>
+                <div style={{fontSize:'11px',color:'#C9A84C',marginTop:'2px'}}>{toPersianNum(jalali.jd)} / {toPersianNum(jalali.jm)}</div>
+              </button>
+            )
+          })}
+        </div>
+
+        {slotsDate && (
+          <>
+            <div className="section-title">
+              اسلات‌ها — سبز = باز · قرمز = بسته
+            </div>
+            {slotsLoading ? (
+              <div style={{textAlign:'center',padding:'20px',color:'rgba(255,255,255,0.4)'}}>
+                در حال بارگذاری...
+              </div>
+            ) : (
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'8px',marginBottom:'24px'}}>
+                {generateSlots().map(slot => {
+                  const isBlocked = blockedSlots.includes(slot)
+                  return (
+                    <button
+                      key={slot}
+                      onClick={() => toggleSlot(slot)}
+                      style={{
+                        padding:'12px 8px',
+                        borderRadius:'12px',
+                        border:'none',
+                        background: isBlocked ? 'rgba(255,59,48,0.2)' : 'rgba(52,199,89,0.15)',
+                        color: isBlocked ? '#ff6b6b' : '#4ade80',
+                        fontSize:'14px',
+                        fontWeight:'700',
+                        cursor:'pointer',
+                        fontFamily:'Vazirmatn,sans-serif',
+                        transition:'all 0.2s'
+                      }}
+                    >
+                      {slot}
+                      <div style={{fontSize:'10px',marginTop:'2px'}}>
+                        {isBlocked ? '❌' : '✅'}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
         <div className="bottom-padding" />
       </div>
     )

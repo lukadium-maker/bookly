@@ -70,6 +70,12 @@ export async function getAvailableSlots(
     }
   })
 
+  // Get blocked slots for this date
+  const blockedSlots = await (prisma as any).blockedSlot.findMany({
+    where: { businessId, date }
+  })
+  const blockedTimes = new Set(blockedSlots.map((b: any) => b.slotTime))
+
   // Generate slots
   const slots: TimeSlot[] = []
   const [startHour, startMin] = workingHours.startTime.split(':').map(Number)
@@ -93,6 +99,11 @@ export async function getAvailableSlots(
 
     // Skip past slots
     if (slotStart <= now) continue
+
+    // Check if slot is manually blocked
+    const tehranSlotStart = new Date(slotStart.getTime() + 210 * 60 * 1000)
+    const slotTimeStr = tehranSlotStart.getUTCHours().toString().padStart(2,'0') + ':' + tehranSlotStart.getUTCMinutes().toString().padStart(2,'0')
+    if (blockedTimes.has(slotTimeStr)) continue
 
     // Check overlap
     const isBooked = existingAppointments.some(apt => {

@@ -3,6 +3,27 @@ import { prisma } from '../db'
 import { bot } from '../bot'
 
 export async function ownerRoutes(app: FastifyInstance) {
+
+  // Admin: generate database backup and return download URL
+  app.get('/api/admin/backup', async (request, reply) => {
+    const { telegramId } = request.query as { telegramId: string }
+    if (telegramId !== '24247682') return reply.status(403).send({ error: 'Forbidden' })
+    const { exec } = await import('child_process')
+    const { promisify } = await import('util')
+    const execAsync = promisify(exec)
+    const fsModule = await import('fs')
+    const filename = 'bookingdb-' + new Date().toISOString().split('T')[0] + '.sql.gz'
+    const filepath = '/root/app/frontend/dist/' + filename
+    try {
+      await execAsync('sudo -u postgres pg_dump bookingdb | gzip > ' + filepath)
+      const stats = fsModule.statSync(filepath)
+      setTimeout(() => { try { fsModule.unlinkSync(filepath) } catch {} }, 10 * 60 * 1000)
+      return { url: 'https://bookly.kindtoy.ir/' + filename, size: stats.size, expires: '10 دقیقه' }
+    } catch (err: any) {
+      return reply.status(500).send({ error: err.message })
+    }
+  })
+
   // Super admin endpoint
   app.get('/api/admin/businesses', async (request, reply) => {
     const { telegramId } = request.query as { telegramId: string }
@@ -273,6 +294,30 @@ export async function ownerRoutes(app: FastifyInstance) {
     await prisma.business.delete({ where: { id: business.id } })
 
     return { success: true, message: 'کسب‌وکار با موفقیت حذف شد' }
+  })
+
+
+  // Edit service
+  app.patch('/api/owner/services/:id', async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const { telegramId, name, duration, price, breakTime } = request.body as {
+      telegramId: string, name?: string, duration?: number, price?: number, breakTime?: number
+    }
+
+    const user = await prisma.user.findUnique({ where: { telegramId } })
+    if (!user) return reply.status(404).send({ error: 'User not found' })
+
+    const service = await (prisma.service as any).update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(duration && { duration }),
+        ...(price !== undefined && { price }),
+        ...(breakTime !== undefined && { break_time: breakTime })
+      }
+    })
+
+    return service
   })
 
   app.delete('/api/owner/services/:id', async (request, reply) => {
