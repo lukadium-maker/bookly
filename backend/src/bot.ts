@@ -13,7 +13,18 @@ bot.command('admin', async (ctx) => {
     reply_markup: {
       inline_keyboard: [[{
         text: 'ورود به پنل',
-        web_app: { url: 'https://bookly.kindtoy.ir/app?admin=1&v=70' }
+        web_app: { url: 'https://bookly.kindtoy.ir/app?admin=1&v=77' }
+      }]]
+    }
+  })
+})
+
+bot.command('mynobat', async (ctx) => {
+  await ctx.reply('نوبت‌های شما', {
+    reply_markup: {
+      inline_keyboard: [[{
+        text: 'مشاهده نوبت‌های من',
+        web_app: { url: 'https://bookly.kindtoy.ir/app?mode=myappointments&v=77' }
       }]]
     }
   })

@@ -29,6 +29,7 @@ interface Service {
   name: string
   duration: string
   price: string
+  breakTime: string
 }
 
 interface WorkingHour {
@@ -55,7 +56,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
 
   // Step 2
   const [services, setServices] = useState<Service[]>([
-    { name: '', duration: '60', price: '0' }
+    { name: '', duration: '60', price: '0', breakTime: '0' }
   ])
 
   // Step 3
@@ -71,7 +72,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
   const [businessSlug, setBusinessSlug] = useState('')
 
   const addService = () => {
-    setServices([...services, { name: '', duration: '60', price: '0' }])
+    setServices([...services, { name: '', duration: '60', price: '0', breakTime: '0' }])
   }
 
   const removeService = (i: number) => {
@@ -119,7 +120,8 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
           telegramId,
           name: s.name.trim(),
           duration: parseInt(s.duration) || 60,
-          price: parseInt(s.price) || 0
+          price: parseInt(s.price) || 0,
+          breakTime: parseInt(s.breakTime) || 0
         })
       }
 
@@ -226,6 +228,8 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
               <div className="form-label">قیمت (تومان)</div>
               <input className="form-input" type="number" placeholder="0"
                 value={s.price} onChange={e => updateService(i, 'price', e.target.value)} />
+              <input className="service-input" type="number" placeholder="استراحت (دقیقه)"
+                value={s.breakTime} onChange={e => updateService(i, 'breakTime', e.target.value)} />
             </div>
           </div>
         </div>

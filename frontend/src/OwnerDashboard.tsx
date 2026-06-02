@@ -185,7 +185,8 @@ export default function OwnerDashboard({ telegramId }: Props) {
         name: newName,
         duration: parseInt(newDuration),
         price: parseInt(newPrice) || 0,
-        breakTime: parseInt(newBreakTime) || 0
+        breakTime: parseInt(newBreakTime) || 0,
+        businessId: selectedBusinessId || undefined
       })
       setNewName('')
       setNewDuration('60')

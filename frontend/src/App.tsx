@@ -1,3 +1,4 @@
+import MyAppointments from './MyAppointments'
 import AdminPanel from './AdminPanel'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
@@ -96,6 +97,8 @@ export default function App() {
   if (mode === 'owner') {
     return <OwnerDashboard telegramId={telegramId} businessSlug={''} />
   }
+
+  if (mode === 'myappointments') return <MyAppointments telegramId={telegramId} />
 
   const [screen, setScreen] = useState<Screen>('loading')
   const [business, setBusiness] = useState<Business | null>(null)

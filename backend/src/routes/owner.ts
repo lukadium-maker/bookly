@@ -194,8 +194,8 @@ export async function ownerRoutes(app: FastifyInstance) {
   })
 
   app.post('/api/owner/services', async (request, reply) => {
-    const { telegramId, name, duration, price, breakTime } = request.body as {
-      telegramId: string, name: string, duration: number, price: number, breakTime?: number
+    const { telegramId, name, duration, price, breakTime, businessId: bizId } = request.body as {
+      telegramId: string, name: string, duration: number, price: number, breakTime?: number, businessId?: string
     }
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
@@ -204,7 +204,7 @@ export async function ownerRoutes(app: FastifyInstance) {
     if (!business) return reply.status(404).send({ error: 'No business found' })
 
     const service = await prisma.service.create({
-      data: { businessId: business.id, name, duration, price, break_time: breakTime || 0 } as any
+      data: { businessId: bizId || business.id, name, duration, price, break_time: breakTime || 0 } as any
     })
     return service
   })
