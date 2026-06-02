@@ -5,6 +5,20 @@ const BOT_TOKEN = '8837076290:AAF266pt1EQpksIQBcse89yAINC3G14YBqU'
 
 export const bot = new Bot(BOT_TOKEN)
 
+bot.command('admin', async (ctx) => {
+  const telegramId = ctx.from?.id?.toString()
+  if (telegramId !== '24247682') return
+
+  await ctx.reply('پنل مدیریت بوکلی', {
+    reply_markup: {
+      inline_keyboard: [[{
+        text: 'ورود به پنل',
+        web_app: { url: 'https://bookly.kindtoy.ir/app?admin=1&v=70' }
+      }]]
+    }
+  })
+})
+
 bot.command('start', async (ctx) => {
   const user = ctx.from
   if (!user) return

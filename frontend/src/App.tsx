@@ -1,3 +1,4 @@
+import AdminPanel from './AdminPanel'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import jalaali from 'jalaali-js'
@@ -82,10 +83,14 @@ const formatPrice = (price: number) => {
 export default function App() {
   const params = new URLSearchParams(window.location.search)
   const mode = params.get('mode')
+  const isAdmin = params.get('admin') === '1'
   const businessSlug = params.get('business') || 'test-salon'
 
   const tg = (window as any).Telegram?.WebApp
   const telegramId = String(tg?.initDataUnsafe?.user?.id || '24247682')
+
+  // Admin panel
+  if (isAdmin) return <AdminPanel telegramId={telegramId} />
 
   // If owner mode, show dashboard
   if (mode === 'owner') {

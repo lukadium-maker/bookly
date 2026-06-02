@@ -3,6 +3,23 @@ import { prisma } from '../db'
 import { bot } from '../bot'
 
 export async function ownerRoutes(app: FastifyInstance) {
+  // Super admin endpoint
+  app.get('/api/admin/businesses', async (request, reply) => {
+    const { telegramId } = request.query as { telegramId: string }
+    if (telegramId !== '24247682') return reply.status(403).send({ error: 'Forbidden' })
+
+    const businesses = await prisma.business.findMany({
+      include: {
+        owner: true,
+        services: { where: { isActive: true } },
+        _count: { select: { appointments: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+    return { businesses }
+  })
+
+
 
 
  app.get('/api/owner/businesses', async (request, reply) => {
