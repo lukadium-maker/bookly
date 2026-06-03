@@ -66,24 +66,47 @@ export async function getAvailableSlots(
  const workStart = startHour * 60 + startMin
  const workEnd = endHour * 60 + endMin
 
- // Build busy intervals: [start_minutes, end_minutes_including_break]
- const busyIntervals: { start: number, end: number, type: 'booked' | 'break' }[] = []
+ // Build busy intervals in minutes from midnight
+ interface BusyInterval { start: number, end: number, type: 'booked' | 'break' }
+ const busyIntervals: BusyInterval[] = []
 
  for (const apt of existingAppointments) {
-   const aptStartMin = (apt.startTime.getTime() - tehranMidnight.getTime()) / 60000
+   const aptStartMin = Math.round((apt.startTime.getTime() - tehranMidnight.getTime()) / 60000)
    const aptEndMin = aptStartMin + duration
    const aptBreakEnd = aptEndMin + breakTime
-
    busyIntervals.push({ start: aptStartMin, end: aptEndMin, type: 'booked' })
    if (breakTime > 0) {
      busyIntervals.push({ start: aptEndMin, end: aptBreakEnd, type: 'break' })
    }
  }
 
+ // Generate candidate start times:
+ // 1. Every 30 minutes within working hours
+ // 2. Right after each appointment's break ends (dynamic slots)
+ const candidateTimes = new Set<number>()
+
+ for (let t = workStart; t + duration <= workEnd; t += 30) {
+   candidateTimes.add(t)
+ }
+
+ // Add dynamic slots: right after break ends
+ for (const apt of existingAppointments) {
+   const aptStartMin = Math.round((apt.startTime.getTime() - tehranMidnight.getTime()) / 60000)
+   const aptEndMin = aptStartMin + duration
+   const afterBreak = aptEndMin + breakTime
+   if (afterBreak + duration <= workEnd && afterBreak >= workStart) {
+     candidateTimes.add(afterBreak)
+   }
+ }
+
+ // Sort candidate times
+ const sortedTimes = Array.from(candidateTimes).sort((a, b) => a - b)
+
  const slots: TimeSlot[] = []
 
- // Generate slots every 30 minutes
- for (let time = workStart; time + duration <= workEnd; time += 30) {
+ for (const time of sortedTimes) {
+   if (time + duration > workEnd) continue
+
    const slotStart = new Date(tehranMidnight)
    slotStart.setUTCMinutes(slotStart.getUTCMinutes() + time)
 
@@ -103,34 +126,15 @@ export async function getAvailableSlots(
      continue
    }
 
-   // Check against busy intervals
-   const slotStartMin = time
    const slotEndMin = time + duration
 
+   // Check status
    let status: SlotStatus = 'available'
 
    for (const busy of busyIntervals) {
-     // Slot overlaps with busy interval
-     if (slotStartMin < busy.end && slotEndMin > busy.start) {
+     if (time < busy.end && slotEndMin > busy.start) {
        status = busy.type
        break
-     }
-     // Slot would push into a busy interval (need duration + breakTime free)
-     if (slotStartMin >= busy.start && slotStartMin < busy.end) {
-       status = busy.type
-       break
-     }
-   }
-
-   // Also check: does this slot's end+break overlap with next appointment?
-   if (status === 'available') {
-     const slotWithBreakEnd = slotEndMin + breakTime
-     for (const apt of existingAppointments) {
-       const aptStartMin = (apt.startTime.getTime() - tehranMidnight.getTime()) / 60000
-       if (slotEndMin > aptStartMin && slotStartMin < aptStartMin) {
-         status = 'booked'
-         break
-       }
      }
    }
 
