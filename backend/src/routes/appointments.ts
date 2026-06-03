@@ -169,26 +169,6 @@ app.get('/api/appointments/my', async (request, reply) => {
   })
 
 // Get client appointments
-app.get('/api/appointments/my', async (request, reply) => {
-  const { telegramId } = request.query as { telegramId: string }
 
-  const user = await prisma.user.findUnique({ where: { telegramId } })
-  if (!user) return reply.status(404).send({ error: 'User not found' })
-
-  const appointments = await prisma.appointment.findMany({
-    where: {
-      clientId: user.id,
-      startTime: { gte: new Date() },
-      status: 'confirmed'
-    },
-    include: {
-      service: true,
-      business: true
-    },
-    orderBy: { startTime: 'asc' }
-  })
-
-  return { appointments }
-})
 
 }
