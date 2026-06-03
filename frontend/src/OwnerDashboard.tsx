@@ -169,7 +169,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
 
   const cancelAppointment = async (id: string) => {
     try {
-      await axios.patch(API + '/owner/appointments/' + id + '/cancel', { telegramId })
+      await axios.patch(API + '/appointments/' + id + '/cancel', { cancelledBy: 'owner' })
       await loadDashboard()
       setScreen('appointments')
     } catch {
@@ -1150,3 +1150,4 @@ export default function OwnerDashboard({ telegramId }: Props) {
 
   return null
 }
+// cache bust Wed Jun  3 12:52:29 UTC 2026

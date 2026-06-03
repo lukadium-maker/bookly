@@ -144,64 +144,43 @@ export async function ownerRoutes(app: FastifyInstance) {
     return { appointments, businessId: business.id, slug: business.slug }
   })
 
+
+  // Cancel appointment
   app.patch('/api/owner/appointments/:id/cancel', async (request, reply) => {
     const { id } = request.params as { id: string }
-    const { telegramId } = request.body as { telegramId: string }
-
-    const user = await prisma.user.findUnique({ where: { telegramId } })
-    if (!user) return reply.status(404).send({ error: 'User not found' })
-
-    const business = await prisma.business.findFirst({ where: { ownerId: user.id } })
-    if (!business) return reply.status(404).send({ error: 'No business found' })
-
-    const appointment = await prisma.appointment.findFirst({
-      where: { id, businessId: business.id },
-      include: { service: true, client: true, business: true }
-    })
-    if (!appointment) return reply.status(404).send({ error: 'Appointment not found' })
-
-    const updated = await prisma.appointment.update({
+    const appointment = await prisma.appointment.update({
       where: { id },
-      data: { status: 'cancelled', cancelledBy: telegramId, cancelledAt: new Date() }
+      data: { status: 'cancelled', cancelledBy: 'owner', cancelledAt: new Date() },
+      include: { service: true, business: { include: { owner: true } }, client: true }
     })
 
     // Notify client
-    const dateStr = appointment.startTime.toLocaleDateString('fa-IR', {
-      weekday: 'long', month: 'long', day: 'numeric',
-      timeZone: appointment.business.timezone
-    })
-    const timeStr = appointment.startTime.toLocaleTimeString('fa-IR', {
-      hour: '2-digit', minute: '2-digit',
-      timeZone: appointment.business.timezone
-    })
-
     try {
+      const start = new Date(appointment.startTime)
+      const timeStr = start.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tehran' })
+      const dateStr = start.toLocaleDateString('fa-IR', { month: 'long', day: 'numeric', timeZone: 'Asia/Tehran' })
       await bot.api.sendMessage(
         appointment.client.telegramId,
-        `❌ نوبت لغو شد\n\n` +
-        `متاسفانه نوبت شما توسط کسب‌وکار لغو شد.\n\n` +
-        `کسب‌وکار: ${appointment.business.name}\n` +
-        `سرویس: ${appointment.service.name}\n` +
-        `تاریخ: ${dateStr}\n` +
-        `ساعت: ${timeStr}\n\n` +
-        `برای رزرو مجدد با کسب‌وکار تماس بگیرید.`
+        `نوبت شما لغو شد\n\nکاربر گرامی، متاسفانه نوبت شما توسط کسب‌وکار لغو گردید.\n\nجزئیات:\nکسب‌وکار: ${appointment.business.name}\nسرویس: ${appointment.service.name}\nتاریخ: ${dateStr}\nساعت: ${timeStr}\n\nبرای رزرو مجدد می‌توانید دوباره اقدام کنید.\nاز توجه شما متشکریم.`
       )
     } catch (err) {
-      console.error('Failed to notify client about cancellation:', err)
+      console.error('Failed to notify client:', err)
     }
 
-    return updated
+    return appointment
   })
 
+
   app.put('/api/owner/working-hours', async (request, reply) => {
-    const { telegramId, hours } = request.body as {
+    const { telegramId, hours, businessId: bizId } = request.body as {
       telegramId: string
       hours: Array<{ dayOfWeek: number, startTime: string, endTime: string, isActive: boolean }>
+      businessId?: string
     }
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
 
-    const business = await prisma.business.findFirst({ where: { ownerId: user.id } })
+    const business = await prisma.business.findFirst({ where: bizId ? { id: bizId, ownerId: user.id } : { ownerId: user.id } })
     if (!business) return reply.status(404).send({ error: 'No business found' })
 
     for (const hour of hours) {

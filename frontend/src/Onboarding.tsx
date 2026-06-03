@@ -118,6 +118,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
         if (!s.name.trim()) continue
         await axios.post(API + '/owner/services', {
           telegramId,
+          businessId: bizRes.data.id,
           name: s.name.trim(),
           duration: parseInt(s.duration) || 60,
           price: parseInt(s.price) || 0,
@@ -130,6 +131,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
       if (activeHours.length > 0) {
         await axios.put(API + '/owner/working-hours', {
           telegramId,
+          businessId: bizRes.data.id,
           hours: hours
         })
       }
