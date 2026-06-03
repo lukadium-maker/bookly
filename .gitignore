@@ -4,3 +4,4 @@ backend/dist/
 .env
 *.log
 .prisma/
+uploads/businesses/

@@ -228,7 +228,12 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
               <div className="form-label">قیمت (تومان)</div>
               <input className="form-input" type="number" placeholder="0"
                 value={s.price} onChange={e => updateService(i, 'price', e.target.value)} />
-              <input className="service-input" type="number" placeholder="استراحت (دقیقه)"
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group" style={{flex:1}}>
+              <div className="form-label">استراحت بعد سرویس (دقیقه)</div>
+              <input className="form-input" type="number" placeholder="0"
                 value={s.breakTime} onChange={e => updateService(i, 'breakTime', e.target.value)} />
             </div>
           </div>

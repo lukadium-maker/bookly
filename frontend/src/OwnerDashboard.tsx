@@ -83,6 +83,9 @@ export default function OwnerDashboard({ telegramId }: Props) {
   const [slotsDate, setSlotsDate] = useState('')
   const [blockedSlots, setBlockedSlots] = useState<string[]>([])
   const [slotsLoading, setSlotsLoading] = useState(false)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [pickerJYear, setPickerJYear] = useState(0)
+  const [pickerJMonth, setPickerJMonth] = useState(0)
   const [editServiceName, setEditServiceName] = useState('')
   const [editServiceDuration, setEditServiceDuration] = useState('')
   const [editServicePrice, setEditServicePrice] = useState('')
@@ -111,7 +114,8 @@ export default function OwnerDashboard({ telegramId }: Props) {
     try {
       // Load all businesses first
       const allBizRes = await axios.get(API + '/owner/businesses', { params: { telegramId } })
-      setBusinesses(allBizRes.data.businesses || [])
+      const bizList2 = allBizRes.data.businesses || []
+      setBusinesses(bizList2)
       if ((allBizRes.data.businesses || []).length === 0) {
         setHasNoBusiness(true)
         setLoading(false)
@@ -150,7 +154,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       setEditCategory(bizRes.data.category || '')
       // Load avatar
       try {
-        const avatarRes = await axios.get(API + '/owner/avatar', { params: { telegramId } })
+        const avatarRes = await axios.get(API + '/owner/avatar', { params: { telegramId, businessId: activeBizId } })
         setAvatarUrl(avatarRes.data.avatarUrl)
       } catch {}
     } catch (err: any) {
@@ -849,6 +853,12 @@ export default function OwnerDashboard({ telegramId }: Props) {
               className="menu-btn"
               onClick={async () => {
                 setSelectedBusinessId(biz.id)
+                if (biz.avatarUrl) {
+                  setAvatarUrl(biz.avatarUrl)
+                  setAvatarTs(Date.now())
+                } else {
+                  setAvatarUrl(null)
+                }
                 setScreen('home')
                 loadDashboard(biz.id)
               }}
@@ -1010,6 +1020,87 @@ export default function OwnerDashboard({ telegramId }: Props) {
             )
           })}
         </div>
+
+
+        <button
+          onClick={() => {
+            const now = jalaali.toJalaali(new Date().getFullYear(), new Date().getMonth()+1, new Date().getDate())
+            setPickerJYear(now.jy)
+            setPickerJMonth(now.jm)
+            setShowDatePicker(true)
+          }}
+          style={{
+            width:'100%', padding:'12px', borderRadius:'14px',
+            border:'1px dashed rgba(255,255,255,0.2)', background:'transparent',
+            color:'rgba(255,255,255,0.6)', fontSize:'14px', cursor:'pointer',
+            fontFamily:'Vazirmatn,sans-serif', marginBottom:'16px'
+          }}
+        >
+          📅 انتخاب تاریخ دیگر...
+        </button>
+
+        {showDatePicker && (
+          <div style={{
+            background:'rgba(20,0,5,0.98)', border:'1px solid rgba(255,255,255,0.1)',
+            borderRadius:'20px', padding:'20px', marginBottom:'16px'
+          }}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}}>
+              <button onClick={() => { if(pickerJMonth===1){setPickerJMonth(12);setPickerJYear(y=>y-1)}else setPickerJMonth(m=>m-1) }}
+                style={{background:'none',border:'none',color:'white',fontSize:'20px',cursor:'pointer'}}>‹</button>
+              <div style={{fontWeight:'700',fontSize:'16px'}}>
+                {['','فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'][pickerJMonth]} {toPersianNum(pickerJYear)}
+              </div>
+              <button onClick={() => { if(pickerJMonth===12){setPickerJMonth(1);setPickerJYear(y=>y+1)}else setPickerJMonth(m=>m+1) }}
+                style={{background:'none',border:'none',color:'white',fontSize:'20px',cursor:'pointer'}}>›</button>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'4px',textAlign:'center',marginBottom:'8px'}}>
+              {['ش','ی','د','س','چ','پ','ج'].map(d => (
+                <div key={d} style={{fontSize:'11px',color:'rgba(255,255,255,0.3)',padding:'4px'}}>{d}</div>
+              ))}
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'4px'}}>
+              {(() => {
+                const days = []
+                const firstDay = jalaali.toGregorian(pickerJYear, pickerJMonth, 1)
+                const firstDate = new Date(firstDay.gy, firstDay.gm-1, firstDay.gd)
+                let startDow = (firstDate.getDay() + 1) % 7
+                for(let i=0;i<startDow;i++) days.push(<div key={'e'+i}></div>)
+                const daysInMonth = pickerJMonth <= 6 ? 31 : pickerJMonth <= 11 ? 30 : jalaali.isLeapJalaaliYear(pickerJYear) ? 30 : 29
+                for(let d=1;d<=daysInMonth;d++) {
+                  const greg = jalaali.toGregorian(pickerJYear, pickerJMonth, d)
+                  const dateStr = greg.gy + '-' + String(greg.gm).padStart(2,'0') + '-' + String(greg.gd).padStart(2,'0')
+                  const isPast = new Date(dateStr) < new Date(new Date().toDateString())
+                  const isSelected = slotsDate === dateStr
+                  days.push(
+                    <button
+                      key={d}
+                      disabled={isPast}
+                      onClick={async () => {
+                        setSlotsDate(dateStr)
+                        setShowDatePicker(false)
+                        await loadBlockedSlots(dateStr)
+                      }}
+                      style={{
+                        padding:'8px 4px', borderRadius:'8px', border:'none',
+                        background: isSelected ? '#6333ff' : isPast ? 'transparent' : 'rgba(255,255,255,0.04)',
+                        color: isPast ? 'rgba(255,255,255,0.2)' : 'white',
+                        fontSize:'13px', cursor: isPast ? 'default' : 'pointer',
+                        fontFamily:'Vazirmatn,sans-serif'
+                      }}
+                    >{toPersianNum(d)}</button>
+                  )
+                }
+                return days
+              })()}
+            </div>
+            <button onClick={() => setShowDatePicker(false)}
+              style={{width:'100%',marginTop:'12px',padding:'10px',borderRadius:'10px',
+                border:'none',background:'rgba(255,255,255,0.06)',color:'white',cursor:'pointer',
+                fontFamily:'Vazirmatn,sans-serif'}}>
+              بستن
+            </button>
+          </div>
+        )}
 
         {slotsDate && (
           <>

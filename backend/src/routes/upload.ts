@@ -106,10 +106,12 @@ export async function uploadRoutes(app: FastifyInstance) {
   })
 
   app.get('/api/owner/avatar', async (request, reply) => {
-    const { telegramId } = request.query as { telegramId: string }
+    const { telegramId, businessId } = request.query as { telegramId: string, businessId?: string }
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
-    const business = await prisma.business.findFirst({ where: { ownerId: user.id } })
+    const business = await prisma.business.findFirst({
+      where: businessId ? { id: businessId, ownerId: user.id } : { ownerId: user.id }
+    })
     if (!business) return reply.status(404).send({ error: 'No business found' })
     return { avatarUrl: (business as any).avatarUrl || null }
   })

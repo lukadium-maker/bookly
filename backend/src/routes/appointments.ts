@@ -108,6 +108,29 @@ export async function appointmentRoutes(app: FastifyInstance) {
     return appointment
   })
 
+
+// Get client appointments
+app.get('/api/appointments/my', async (request, reply) => {
+  const { telegramId } = request.query as { telegramId: string }
+
+  const user = await prisma.user.findUnique({ where: { telegramId } })
+
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      clientId: user.id,
+      startTime: { gte: new Date() },
+      status: 'confirmed'
+    },
+    include: {
+      service: true,
+      business: true
+    },
+    orderBy: { startTime: 'asc' }
+  })
+
+  return { appointments }
+})
+
   app.get('/api/appointments/:id', async (request, reply) => {
     const { id } = request.params as { id: string }
     const appointment = await prisma.appointment.findUnique({
