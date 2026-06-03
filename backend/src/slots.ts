@@ -3,141 +3,144 @@ import { prisma } from './db'
 type SlotStatus = 'available' | 'booked' | 'break' | 'blocked' | 'past'
 
 interface TimeSlot {
-  start: string
-  end: string
-  status: SlotStatus
-  available: boolean
+ start: string
+ end: string
+ status: SlotStatus
+ available: boolean
 }
 
 export async function getAvailableSlots(
-  businessId: string,
-  serviceId: string,
-  date: string
+ businessId: string,
+ serviceId: string,
+ date: string
 ): Promise<TimeSlot[]> {
 
-  const tzOffset = 210 // Asia/Tehran = UTC+3:30
+ const tzOffset = 210 // Asia/Tehran = UTC+3:30
 
-  // Parse date in Tehran timezone
-  const [year, month, day] = date.split('-').map(Number)
-  const tehranMidnight = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
-  tehranMidnight.setUTCMinutes(tehranMidnight.getUTCMinutes() - tzOffset)
+ const [year, month, day] = date.split('-').map(Number)
+ const tehranMidnight = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+ tehranMidnight.setUTCMinutes(tehranMidnight.getUTCMinutes() - tzOffset)
 
-  const dateStart = new Date(tehranMidnight)
-  const dateEnd = new Date(tehranMidnight)
-  dateEnd.setUTCHours(dateEnd.getUTCHours() + 24)
+ const dateStart = new Date(tehranMidnight)
+ const dateEnd = new Date(tehranMidnight)
+ dateEnd.setUTCHours(dateEnd.getUTCHours() + 24)
 
-  // Day of week in Tehran
-  const tehranDate = new Date(tehranMidnight.getTime() + tzOffset * 60 * 1000)
-  const dayOfWeek = tehranDate.getUTCDay()
+ const tehranDate = new Date(tehranMidnight.getTime() + tzOffset * 60 * 1000)
+ const dayOfWeek = tehranDate.getUTCDay()
 
-  // Get service
-  const service = await prisma.service.findFirst({
-    where: { id: serviceId, businessId, isActive: true }
-  })
-  if (!service) return []
+ const service = await prisma.service.findFirst({
+   where: { id: serviceId, businessId, isActive: true }
+ })
+ if (!service) return []
 
-  // Get working hours
-  const workingHours = await prisma.workingHours.findFirst({
-    where: { businessId, dayOfWeek, isActive: true }
-  })
-  if (!workingHours) return []
+ const workingHours = await prisma.workingHours.findFirst({
+   where: { businessId, dayOfWeek, isActive: true }
+ })
+ if (!workingHours) return []
 
-  // Check special closure
-  const closure = await prisma.specialClosure.findFirst({
-    where: { businessId, date: { gte: dateStart, lte: dateEnd } }
-  })
-  if (closure) return []
+ const closure = await prisma.specialClosure.findFirst({
+   where: { businessId, date: { gte: dateStart, lte: dateEnd } }
+ })
+ if (closure) return []
 
-  // Get existing appointments
-  const existingAppointments = await prisma.appointment.findMany({
-    where: {
-      businessId,
-      startTime: { gte: dateStart, lt: dateEnd },
-      status: { in: ['confirmed', 'pending'] }
-    }
-  })
+ const existingAppointments = await prisma.appointment.findMany({
+   where: {
+     businessId,
+     startTime: { gte: dateStart, lt: dateEnd },
+     status: { in: ['confirmed', 'pending'] }
+   },
+   orderBy: { startTime: 'asc' }
+ })
 
-  // Get blocked slots
-  const blockedSlots = await (prisma as any).blockedSlot.findMany({
-    where: { businessId, date }
-  })
-  const blockedTimes = new Set(blockedSlots.map((b: any) => b.slotTime))
+ const blockedSlots = await (prisma as any).blockedSlot.findMany({
+   where: { businessId, date }
+ })
+ const blockedTimes = new Set(blockedSlots.map((b: any) => b.slotTime))
 
-  // Build busy timeline: each appointment occupies [start, end + breakTime]
-  const duration = service.duration
-  const breakTime = (service as any).break_time || 0
-  const now = new Date()
+ const duration = service.duration
+ const breakTime = (service as any).break_time || 0
+ const now = new Date()
 
-  // Working hours in minutes
-  const [startHour, startMin] = workingHours.startTime.split(':').map(Number)
-  const [endHour, endMin] = workingHours.endTime.split(':').map(Number)
-  const workStart = startHour * 60 + startMin
-  const workEnd = endHour * 60 + endMin
+ const [startHour, startMin] = workingHours.startTime.split(':').map(Number)
+ const [endHour, endMin] = workingHours.endTime.split(':').map(Number)
+ const workStart = startHour * 60 + startMin
+ const workEnd = endHour * 60 + endMin
 
-  const slots: TimeSlot[] = []
+ // Build busy intervals: [start_minutes, end_minutes_including_break]
+ const busyIntervals: { start: number, end: number, type: 'booked' | 'break' }[] = []
 
-  // Generate every 30-min slot within working hours
-  for (let time = workStart; time + duration <= workEnd; time += 30) {
+ for (const apt of existingAppointments) {
+   const aptStartMin = (apt.startTime.getTime() - tehranMidnight.getTime()) / 60000
+   const aptEndMin = aptStartMin + duration
+   const aptBreakEnd = aptEndMin + breakTime
 
-    const slotStart = new Date(tehranMidnight)
-    slotStart.setUTCMinutes(slotStart.getUTCMinutes() + time)
+   busyIntervals.push({ start: aptStartMin, end: aptEndMin, type: 'booked' })
+   if (breakTime > 0) {
+     busyIntervals.push({ start: aptEndMin, end: aptBreakEnd, type: 'break' })
+   }
+ }
 
-    const slotEnd = new Date(slotStart)
-    slotEnd.setUTCMinutes(slotEnd.getUTCMinutes() + duration)
+ const slots: TimeSlot[] = []
 
-    const slotEndWithBreak = new Date(slotEnd)
-    slotEndWithBreak.setUTCMinutes(slotEndWithBreak.getUTCMinutes() + breakTime)
+ // Generate slots every 30 minutes
+ for (let time = workStart; time + duration <= workEnd; time += 30) {
+   const slotStart = new Date(tehranMidnight)
+   slotStart.setUTCMinutes(slotStart.getUTCMinutes() + time)
 
-    // Past slots
-    if (slotStart <= now) {
-      continue // dont show past slots
-    }
+   const slotEnd = new Date(slotStart)
+   slotEnd.setUTCMinutes(slotEnd.getUTCMinutes() + duration)
 
-    // Tehran time string for blocked check
-    const tehranSlotStart = new Date(slotStart.getTime() + tzOffset * 60 * 1000)
-    const slotTimeStr = tehranSlotStart.getUTCHours().toString().padStart(2,'0') + ':' + tehranSlotStart.getUTCMinutes().toString().padStart(2,'0')
+   // Skip past
+   if (slotStart <= now) continue
 
-    // Blocked manually
-    if (blockedTimes.has(slotTimeStr)) {
-      slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString(), status: 'blocked', available: false })
-      continue
-    }
+   // Tehran time string for blocked check
+   const tehranSlotStart = new Date(slotStart.getTime() + tzOffset * 60 * 1000)
+   const slotTimeStr = tehranSlotStart.getUTCHours().toString().padStart(2,'0') + ':' + tehranSlotStart.getUTCMinutes().toString().padStart(2,'0')
 
-    // Check against existing appointments
-    let status: SlotStatus = 'available'
+   // Blocked manually
+   if (blockedTimes.has(slotTimeStr)) {
+     slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString(), status: 'blocked', available: false })
+     continue
+   }
 
-    for (const apt of existingAppointments) {
-      const aptStart = apt.startTime
-      const aptEnd = apt.endTime
-      const aptEndWithBreak = new Date(aptEnd)
-      aptEndWithBreak.setUTCMinutes(aptEndWithBreak.getUTCMinutes() + breakTime)
+   // Check against busy intervals
+   const slotStartMin = time
+   const slotEndMin = time + duration
 
-      // Slot overlaps with appointment itself
-      if (slotStart < aptEnd && slotEnd > aptStart) {
-        status = 'booked'
-        break
-      }
+   let status: SlotStatus = 'available'
 
-      // Slot falls in break time after appointment
-      if (slotStart >= aptEnd && slotStart < aptEndWithBreak) {
-        status = 'break'
-        break
-      }
+   for (const busy of busyIntervals) {
+     // Slot overlaps with busy interval
+     if (slotStartMin < busy.end && slotEndMin > busy.start) {
+       status = busy.type
+       break
+     }
+     // Slot would push into a busy interval (need duration + breakTime free)
+     if (slotStartMin >= busy.start && slotStartMin < busy.end) {
+       status = busy.type
+       break
+     }
+   }
 
-      // Slot would overlap with appointment's break time
-      if (slotStart < aptEndWithBreak && slotEnd > aptStart) {
-        status = 'booked'
-        break
-      }
-    }
+   // Also check: does this slot's end+break overlap with next appointment?
+   if (status === 'available') {
+     const slotWithBreakEnd = slotEndMin + breakTime
+     for (const apt of existingAppointments) {
+       const aptStartMin = (apt.startTime.getTime() - tehranMidnight.getTime()) / 60000
+       if (slotEndMin > aptStartMin && slotStartMin < aptStartMin) {
+         status = 'booked'
+         break
+       }
+     }
+   }
 
-    slots.push({
-      start: slotStart.toISOString(),
-      end: slotEnd.toISOString(),
-      status,
-      available: status === 'available'
-    })
-  }
+   slots.push({
+     start: slotStart.toISOString(),
+     end: slotEnd.toISOString(),
+     status,
+     available: status === 'available'
+   })
+ }
 
-  return slots
+ return slots
 }
