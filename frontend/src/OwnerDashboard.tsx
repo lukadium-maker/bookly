@@ -152,7 +152,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       const [todayRes, allRes, bizRes] = await Promise.all([
         ownerAxios.get('/owner/appointments', { params: { telegramId, filter: 'today', businessId: activeBizId } }),
         ownerAxios.get('/owner/appointments', { params: { telegramId, filter: 'upcoming', businessId: activeBizId } }),
-        (() => { console.log('Loading business with activeBizId:', activeBizId); return ownerAxios.get('/owner/business', { params: { telegramId, businessId: activeBizId } }) })()
+        ownerAxios.get('/owner/business', { params: { telegramId, businessId: activeBizId } })
       ])
       setTodayApts(todayRes.data.appointments)
       setAppointments(allRes.data.appointments)
@@ -279,9 +279,10 @@ export default function OwnerDashboard({ telegramId }: Props) {
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
                 const base64 = dataUrl.split(',')[1]
                 try {
+                  const tgInitData = (window as any).Telegram?.WebApp?.initData || ''
                   const response = await fetch(API + '/owner/upload-avatar-base64', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'x-telegram-init-data': tgInitData },
                     body: JSON.stringify({ telegramId, base64, mimeType: 'image/jpeg', businessId: selectedBusinessId || undefined })
                   })
                   const res = await response.json()

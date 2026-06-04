@@ -90,7 +90,7 @@ export default function MyAppointments({ telegramId }: { telegramId: string }) {
 
               <div style={{display:'flex',justifyContent:'space-between',fontSize:'13px',color:'rgba(255,255,255,0.4)',marginBottom:'16px'}}>
                 <span>مدت: {toPersianNum(apt.service.duration)} دقیقه</span>
-                <span>قیمت: {toPersianNum(apt.service.price).replace(/\B(?=(\d{3})+(?!\d))/g, '،')} تومان</span>
+                <span>قیمت: {apt.service.price === 0 ? 'رایگان' : toPersianNum(apt.service.price) + ' تومان'}</span>
               </div>
             </div>
           )

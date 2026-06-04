@@ -161,7 +161,16 @@ app.get('/api/appointments/my', async (request, reply) => {
 
   app.patch('/api/appointments/:id/cancel', async (request, reply) => {
     const { id } = request.params as { id: string }
-    const { cancelledBy } = request.body as { cancelledBy: string }
+    const { cancelledBy, telegramId } = request.body as { cancelledBy: string, telegramId: string }
+    if (!telegramId) return reply.status(401).send({ error: 'Unauthorized' })
+    const existing = await prisma.appointment.findUnique({
+      where: { id },
+      include: { business: { include: { owner: true } }, client: true }
+    })
+    if (!existing) return reply.status(404).send({ error: 'Appointment not found' })
+    const isOwner = existing.business.owner.telegramId === telegramId
+    const isClient = existing.client.telegramId === telegramId
+    if (!isOwner && !isClient) return reply.status(403).send({ error: 'Forbidden' })
     const appointment = await prisma.appointment.update({
       where: { id },
       data: { status: 'cancelled', cancelledBy, cancelledAt: new Date() },

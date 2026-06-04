@@ -286,6 +286,10 @@ export async function ownerRoutes(app: FastifyInstance) {
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
 
+    const existingService = await prisma.service.findUnique({ where: { id }, include: { business: true } })
+    if (!existingService) return reply.status(404).send({ error: 'Service not found' })
+    if (existingService.business.ownerId !== user.id) return reply.status(403).send({ error: 'Forbidden' })
+
     const service = await (prisma.service as any).update({
       where: { id },
       data: {
@@ -304,6 +308,10 @@ export async function ownerRoutes(app: FastifyInstance) {
     const { telegramId } = request.body as { telegramId: string }
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
+
+    const existingService = await prisma.service.findUnique({ where: { id }, include: { business: true } })
+    if (!existingService) return reply.status(404).send({ error: 'Service not found' })
+    if (existingService.business.ownerId !== user.id) return reply.status(403).send({ error: 'Forbidden' })
 
     await prisma.service.update({ where: { id }, data: { isActive: false } })
     return { success: true }

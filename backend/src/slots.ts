@@ -72,7 +72,7 @@ export async function getAvailableSlots(
 
   for (const apt of existingAppointments) {
     const aptStartMin = Math.round((apt.startTime.getTime() - tehranMidnight.getTime()) / 60000)
-    const aptEndMin = aptStartMin + duration
+    const aptEndMin = Math.round((apt.endTime.getTime() - tehranMidnight.getTime()) / 60000)
     const aptBreakEnd = aptEndMin + breakTime
     busyIntervals.push({ start: aptStartMin, end: aptEndMin, type: 'booked' })
     if (breakTime > 0) {

@@ -3,6 +3,14 @@ import axios from 'axios'
 
 const API = 'https://bookly.kindtoy.ir/api'
 
+const ownerAxios = axios.create({ baseURL: API })
+ownerAxios.interceptors.request.use((cfg: any) => {
+  const tg = (window as any).Telegram?.WebApp
+  const id = tg?.initData || ''
+  if (id) cfg.headers['x-telegram-init-data'] = id
+  return cfg
+})
+
 const CATEGORIES = [
   { id: 'nail', label: 'نیل', icon: '💅' },
   { id: 'hair', label: 'آرایشگاه', icon: '✂️' },
@@ -107,7 +115,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
     setError('')
     try {
       // Create business
-      const bizRes = await axios.post(API + '/owner/business', {
+      const bizRes = await ownerAxios.post('/owner/business', {
         telegramId, name: businessName, description, category, timezone: 'Asia/Tehran'
       })
       const slug = bizRes.data.slug
@@ -116,7 +124,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
       // Add services one by one
       for (const s of services) {
         if (!s.name.trim()) continue
-        await axios.post(API + '/owner/services', {
+        await ownerAxios.post('/owner/services', {
           telegramId,
           businessId: bizRes.data.id,
           name: s.name.trim(),
@@ -129,7 +137,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
       // Set working hours - only active days
       const activeHours = hours.filter(h => h.isActive)
       if (activeHours.length > 0) {
-        await axios.put(API + '/owner/working-hours', {
+        await ownerAxios.put('/owner/working-hours', {
           telegramId,
           businessId: bizRes.data.id,
           hours: hours
@@ -155,7 +163,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
         <div className="progress-label">مرحله ۱ از ۳</div>
       </div>
       <div className="header">
-        <div className="business-avatar">🏢</div>
+<div className="business-avatar" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div>
         <h1>اطلاعات کسب‌وکار</h1>
         <p>بیایید کسب‌وکار خود را معرفی کنید</p>
       </div>
@@ -202,7 +210,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
         <div className="progress-label">مرحله ۲ از ۳</div>
       </div>
       <div className="header">
-        <div className="business-avatar">✨</div>
+<div className="business-avatar" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg></div>
         <h1>سرویس‌ها</h1>
         <p>خدماتی که ارائه می‌دهید را تعریف کنید</p>
       </div>
@@ -263,7 +271,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
         <div className="progress-label">مرحله ۳ از ۳</div>
       </div>
       <div className="header">
-        <div className="business-avatar">⏰</div>
+<div className="business-avatar" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
         <h1>ساعات کاری</h1>
         <p>روزها و ساعات فعالیت خود را تعیین کنید</p>
       </div>
@@ -307,7 +315,7 @@ export default function Onboarding({ telegramId, onComplete }: Props) {
   // STEP 4: Done
   return (
     <div className="success-screen" dir="rtl">
-      <div className="success-icon-wrap">🎉</div>
+<div className="success-icon-wrap"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="1.5"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></div>
       <div className="success-title">کسب‌وکار شما آماده است!</div>
       <div className="success-subtitle">
         لینک اختصاصی رزرو نوبت شما آماده شد

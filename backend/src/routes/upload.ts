@@ -54,10 +54,11 @@ export async function uploadRoutes(app: FastifyInstance) {
   })
 
   app.post('/api/owner/upload-avatar-base64', async (request: any, reply) => {
-    const { telegramId, base64, mimeType } = request.body as {
+    const { telegramId, base64, mimeType, businessId } = request.body as {
       telegramId: string
       base64: string
       mimeType: string
+      businessId?: string
     }
 
     if (!telegramId) return reply.status(400).send({ error: 'telegramId required' })
@@ -65,7 +66,7 @@ export async function uploadRoutes(app: FastifyInstance) {
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
 
-    const business = await prisma.business.findFirst({ where: { ownerId: user.id } })
+    const business = await prisma.business.findFirst({ where: businessId ? { id: businessId, ownerId: user.id } : { ownerId: user.id } })
     if (!business) return reply.status(404).send({ error: 'No business found' })
 
     try {
