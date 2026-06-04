@@ -272,6 +272,8 @@ export async function ownerRoutes(app: FastifyInstance) {
     await prisma.appointment.deleteMany({ where: { businessId: business.id } })
     await prisma.workingHours.deleteMany({ where: { businessId: business.id } })
     await prisma.specialClosure.deleteMany({ where: { businessId: business.id } })
+    await prisma.blockedSlot.deleteMany({ where: { businessId: business.id } })
+    await prisma.appointment.deleteMany({ where: { businessId: business.id } })
     await prisma.service.deleteMany({ where: { businessId: business.id } })
     await prisma.business.delete({ where: { id: business.id } })
 
