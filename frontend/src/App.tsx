@@ -265,6 +265,7 @@ export default function App() {
       </div>
       {loading && <div className="loading">در حال بارگذاری...</div>}
       {!loading && slots.length === 0 && <div className="error-msg">زمان آزادی برای این روز وجود ندارد.</div>}
+      {!loading && slots.length > 0 && slots.filter(s => s.available).length === 0 && <div className="error-msg" style={{marginBottom:'8px'}}>همه ساعات این روز رزرو شده است</div>}
       {!loading && slots.length > 0 && <>
         <div className="section-title">ساعت‌های آزاد</div>
         <div className="slots-grid">
