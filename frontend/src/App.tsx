@@ -175,7 +175,7 @@ export default function App() {
 
   if (screen === 'loading') return (
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'100vh',gap:'16px'}}>
-      <div style={{fontSize:'48px'}}>������</div>
+      <div style={{marginBottom:'8px'}}><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
       <div style={{fontSize:'18px',fontWeight:'700',color:'#C9A84C'}}>بوکلی</div>
       <div style={{fontSize:'14px',color:'rgba(255,255,255,0.4)'}}>در حال بارگذاری...</div>
       <div style={{width:'40px',height:'3px',background:'linear-gradient(90deg,#6333ff,#C9A84C)',borderRadius:'2px',animation:'pulse 1.5s infinite'}}></div>

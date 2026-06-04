@@ -37,7 +37,7 @@ export async function blockedSlotRoutes(app: FastifyInstance) {
     const booked: string[] = []
     for (const apt of appointments) {
       const aptStartMin = Math.round((apt.startTime.getTime() - tehranMidnight.getTime()) / 60000)
-      const aptEndMin = aptStartMin + 60 // approximate duration
+      const aptEndMin = Math.round((apt.endTime.getTime() - tehranMidnight.getTime()) / 60000)
       // Mark all 30-min slots that overlap
       for (let t = Math.floor(aptStartMin / 30) * 30; t < aptEndMin; t += 30) {
         const h = Math.floor(t / 60).toString().padStart(2,'0')

@@ -114,6 +114,7 @@ app.get('/api/appointments/my', async (request, reply) => {
   const { telegramId } = request.query as { telegramId: string }
 
   const user = await prisma.user.findUnique({ where: { telegramId } })
+  if (!user) return reply.status(404).send({ error: 'User not found' })
 
   const appointments = await prisma.appointment.findMany({
     where: {
