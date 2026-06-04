@@ -7,13 +7,15 @@ function toPersianNum(n: number) {
   return n.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[parseInt(d)])
 }
 
-function formatDateTime(iso: string, timezone: string) {
+function formatDateTime(iso: string, _timezone: string) {
   const d = new Date(iso)
+  // Manual Tehran conversion (UTC+3:30 = +210 min)
+  const tehran = new Date(d.getTime() + 210 * 60 * 1000)
+  const h = tehran.getUTCHours().toString().padStart(2,'0')
+  const m = tehran.getUTCMinutes().toString().padStart(2,'0')
+  const timeStr = h + ':' + m
   const dateStr = d.toLocaleDateString('fa-IR', {
-    weekday: 'long', month: 'long', day: 'numeric', timeZone: timezone
-  })
-  const timeStr = d.toLocaleTimeString('fa-IR', {
-    hour: '2-digit', minute: '2-digit', timeZone: timezone
+    month: 'long', day: 'numeric', timeZone: 'Asia/Tehran'
   })
   return { dateStr, timeStr }
 }

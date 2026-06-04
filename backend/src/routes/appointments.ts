@@ -163,8 +163,23 @@ app.get('/api/appointments/my', async (request, reply) => {
     const { cancelledBy } = request.body as { cancelledBy: string }
     const appointment = await prisma.appointment.update({
       where: { id },
-      data: { status: 'cancelled', cancelledBy, cancelledAt: new Date() }
+      data: { status: 'cancelled', cancelledBy, cancelledAt: new Date() },
+      include: { service: true, business: true, client: true }
     })
+
+    try {
+      const start = new Date(appointment.startTime)
+      const tehran = new Date(start.getTime() + 210 * 60 * 1000)
+      const timeStr = tehran.getUTCHours().toString().padStart(2,'0') + ':' + tehran.getUTCMinutes().toString().padStart(2,'0')
+      const dateStr = start.toLocaleDateString('fa-IR', { month: 'long', day: 'numeric', timeZone: 'Asia/Tehran' })
+      await bot.api.sendMessage(
+        appointment.client.telegramId,
+        'نوبت شما لغو شد\n\nکاربر گرامی، متاسفانه نوبت شما لغو گردید.\n\nکسب و کار: ' + appointment.business.name + '\nسرویس: ' + appointment.service.name + '\nتاریخ: ' + dateStr + '\nساعت: ' + timeStr + '\n\nبرای رزرو مجدد می توانید دوباره اقدام کنید.'
+      )
+    } catch (err) {
+      console.error('Failed to notify client of cancellation:', err)
+    }
+
     return appointment
   })
 

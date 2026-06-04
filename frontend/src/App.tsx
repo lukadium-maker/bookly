@@ -273,10 +273,10 @@ export default function App() {
             const isAvailable = status === 'available'
             const label = status === 'booked' ? 'رزرو شده' : status === 'break' ? 'استراحت' : status === 'blocked' ? 'بسته' : ''
             const style = !isAvailable ? {
-              background: status === 'booked' ? 'rgba(120,120,120,0.1)' : status === 'break' ? 'rgba(99,51,255,0.08)' : 'rgba(255,59,48,0.08)',
-              color: status === 'booked' ? 'rgba(255,255,255,0.25)' : status === 'break' ? 'rgba(167,139,250,0.35)' : 'rgba(255,107,107,0.35)',
+              background: status === 'booked' ? 'rgba(180,50,50,0.25)' : status === 'break' ? 'rgba(99,51,255,0.2)' : 'rgba(255,59,48,0.2)',
+              color: 'rgba(255,255,255,0.7)',
               cursor: 'not-allowed',
-              border: '1px solid rgba(255,255,255,0.05)',
+              border: status === 'booked' ? '1px solid rgba(180,50,50,0.3)' : status === 'break' ? '1px solid rgba(99,51,255,0.3)' : '1px solid rgba(255,59,48,0.3)',
               fontSize: '12px'
             } : {}
             return (

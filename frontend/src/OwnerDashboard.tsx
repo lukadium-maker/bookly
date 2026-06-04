@@ -20,8 +20,9 @@ const formatJalali = (date: Date) => {
 
 const formatTime = (iso: string) => {
   const d = new Date(iso)
-  const h = d.getUTCHours().toString().padStart(2, '0')
-  const m = d.getUTCMinutes().toString().padStart(2, '0')
+  const tehran = new Date(d.getTime() + 210 * 60 * 1000)
+  const h = tehran.getUTCHours().toString().padStart(2, '0')
+  const m = tehran.getUTCMinutes().toString().padStart(2, '0')
   return toPersianNum(parseInt(h)) + ':' + toPersianNum(parseInt(m))
 }
 
