@@ -1,4 +1,4 @@
-import { Sparkles, Clock, Scissors, CheckCircle2, XCircle } from 'lucide-react'
+import { Sparkles, Clock, Scissors, CheckCircle2, XCircle, Settings } from 'lucide-react'
 import Onboarding from './Onboarding'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
@@ -239,7 +239,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
             {avatarUrl ? (
               <img src={'https://bookly.kindtoy.ir' + avatarUrl + '?t=' + avatarTs} className="business-avatar-img" alt="avatar" />
             ) : (
-              <div className="business-avatar">🏢</div>
+              <div className="business-avatar"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div>
             )}
             <div className="avatar-edit-badge">{uploading ? '...' : '✏️'}</div>
           </label>
@@ -343,11 +343,11 @@ export default function OwnerDashboard({ telegramId }: Props) {
             <span>همه نوبت‌ها</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('services')}>
-            <Sparkles size={18} color='#C9A84C' />
+            <span style={{display:'flex',alignItems:'center'}}><Sparkles size={18} color='#C9A84C' /></span>
             <span>مدیریت سرویس‌ها</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('hours')}>
-            <Clock size={18} color='#a78bfa' />
+            <span style={{display:'flex',alignItems:'center'}}><Clock size={18} color='#a78bfa' /></span>
             <span>ساعات کاری</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('manageSlots')}>
@@ -359,7 +359,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
             <span>لینک رزرو نوبت</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('settings')}>
-            <span>⚙️</span>
+            <span style={{display:"flex",alignItems:"center"}}><Settings size={18} color="rgba(255,255,255,0.6)" /></span>
             <span>تنظیمات</span>
           </button>
         </div>
@@ -419,7 +419,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       <div className="screen" dir="rtl">
         <button className="back-btn" onClick={() => setScreen('appointments')}>← بازگشت</button>
         <div className="header">
-          <div className="business-avatar">📋</div>
+          <div className="business-avatar"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div>
           <h1>جزئیات نوبت</h1>
         </div>
         <div className="confirm-card">
@@ -480,7 +480,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
         {services.map(s => (
           <div key={s.id} className="service-card">
             <div className="service-card-left">
-              <div className="service-icon"><Scissors size={16} color="#C9A84C" /></div>
+              <div className="service-icon"><span style={{display:'flex',alignItems:'center'}}><Scissors size={16} color='#C9A84C' /></span></div>
               <div>
                 <div className="service-name">{s.name}</div>
                 <div className="service-meta">{toPersianNum(s.duration)} دقیقه · {formatPrice(s.price)}</div>
@@ -651,7 +651,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       <div className="screen" dir="rtl">
         <button className="back-btn" onClick={() => setScreen('home')}>← بازگشت</button>
         <div className="header">
-          <div className="business-avatar">🔗</div>
+          <div className="business-avatar"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div>
           <h1>لینک رزرو نوبت</h1>
           <p>این لینک را در اینستاگرام بیو خود بگذارید</p>
         </div>
@@ -706,7 +706,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       <div className="screen" dir="rtl">
         <button className="back-btn" onClick={() => setScreen('home')}>← بازگشت</button>
         <div className="header">
-          <div className="business-avatar">⚙️</div>
+          <div className="business-avatar"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div>
           <h1>تنظیمات</h1>
         </div>
 
@@ -789,7 +789,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       <div className="screen" dir="rtl">
         <button className="back-btn" onClick={() => setScreen('settings')}>← بازگشت</button>
         <div className="header">
-          <div className="business-avatar">✏️</div>
+          <div className="business-avatar"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
           <h1>ویرایش اطلاعات</h1>
         </div>
 
@@ -844,7 +844,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
     return (
       <div className="screen" dir="rtl">
         <div className="header">
-          <div className="business-avatar">🏢</div>
+          <div className="business-avatar"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div>
           <h1>کسب‌وکار خود را انتخاب کنید</h1>
           <p>برای مدیریت کدام کسب‌وکار وارد شوید؟</p>
         </div>
@@ -869,7 +869,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
               {biz.avatarUrl ? (
                 <img src={'https://bookly.kindtoy.ir' + biz.avatarUrl} style={{width:'32px',height:'32px',borderRadius:'8px',objectFit:'cover'}} alt="" />
               ) : (
-                <span>🏢</span>
+                <div style={{width:"32px",height:"32px",borderRadius:"8px",background:"linear-gradient(135deg,#6333ff,#a78bfa)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:"900",color:"white",flexShrink:0}}>{biz.name.charAt(0)}</div>
               )}
               <span>{biz.name}</span>
             </button>
@@ -913,7 +913,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       <div className="screen" dir="rtl">
         <button className="back-btn" onClick={() => setScreen('services')}>← بازگشت</button>
         <div className="header">
-          <div className="business-avatar">✏️</div>
+          <div className="business-avatar"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
           <h1>ویرایش سرویس</h1>
         </div>
 
@@ -986,7 +986,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       <div className="screen" dir="rtl">
         <button className="back-btn" onClick={() => setScreen('home')}>← بازگشت</button>
         <div className="header">
-          <div className="business-avatar">🚫</div>
+          <div className="business-avatar"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div>
           <h1>مسدود کردن ساعات</h1>
           <p>اسلاتی که نمیخواید رزرو بشن را ببندید</p>
         </div>

@@ -37,7 +37,7 @@ const PERSIAN_MONTHS = [
   'فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور',
   'مهر','آبان','آذر','دی','بهمن','اسفند'
 ]
-const PERSIAN_DAYS = ['ش','ی','د','س','چ','پ','ج']
+const PERSIAN_DAYS = ['ی','د','س','چ','پ','ج','ش']
 
 const SERVICE_ICONS: Record<string, string> = {
   'nail': '💅', 'manicure': '💅', 'pedicure': '🦶',
@@ -231,7 +231,7 @@ export default function App() {
             <button className="calendar-nav" onClick={prevMonth}>‹</button>
           </div>
           <div className="calendar-grid">
-            {PERSIAN_DAYS.map(d => <div key={d} className="calendar-day-name">{d}</div>)}
+            {['ش','ی','د','س','چ','پ','ج'].map(d => <div key={d} className="calendar-day-name">{d}</div>)}
             {Array.from({length: firstDay}).map((_,i) => <div key={'e'+i} />)}
             {Array.from({length: daysInMonth}).map((_,i) => {
               const jd = i+1
