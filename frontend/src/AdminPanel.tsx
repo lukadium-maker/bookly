@@ -4,6 +4,14 @@ import { Download, Briefcase, Calendar, Building2, Shield } from 'lucide-react'
 
 const API = 'https://bookly.kindtoy.ir/api'
 
+const ownerAxios = axios.create({ baseURL: API })
+ownerAxios.interceptors.request.use((cfg: any) => {
+  const tg = (window as any).Telegram?.WebApp
+  const id = tg?.initData || ''
+  if (id) cfg.headers['x-telegram-init-data'] = id
+  return cfg
+})
+
 const CATEGORY_LABELS: Record<string, string> = {
   hair: 'آرایشگاه',
   beauty: 'زیبایی',
@@ -21,7 +29,7 @@ export default function AdminPanel({ telegramId }: { telegramId: string }) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    axios.get(API + '/admin/businesses', { params: { telegramId } })
+    ownerAxios.get('/admin/businesses', { params: { telegramId } })
       .then(res => { setBusinesses(res.data.businesses); setLoading(false) })
       .catch((err) => { setError('خطا: ' + (err.response?.data?.error || err.message)); setLoading(false) })
   }, [])
@@ -83,7 +91,8 @@ export default function AdminPanel({ telegramId }: { telegramId: string }) {
         onClick={async () => {
           setBackupLoading(true)
           try {
-            const res = await fetch(API + '/admin/backup?telegramId=' + telegramId)
+            const tgInitData = (window as any).Telegram?.WebApp?.initData || ''
+            const res = await fetch(API + '/admin/backup?telegramId=' + telegramId, { headers: { 'x-telegram-init-data': tgInitData } })
             const data = await res.json()
             navigator.clipboard.writeText(data.url).then(() => {
               alert('لینک کپی شد!\n\n' + data.url + '\n\nاین لینک را در مرورگر باز کنید و فایل را دانلود کنید')

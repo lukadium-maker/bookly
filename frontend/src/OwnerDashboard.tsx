@@ -191,7 +191,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
   const saveWorkingHours = async () => {
     setLoading(true)
     try {
-      await ownerAxios.put('/owner/working-hours', { telegramId, hours: workingHours })
+      await ownerAxios.put('/owner/working-hours', { telegramId, hours: workingHours, businessId: selectedBusinessId || undefined })
       setError('')
       alert('ساعات کاری به‌روزشد!')
     } catch {
@@ -586,7 +586,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
 
   // WORKING HOURS SCREEN
   if (screen === 'hours') {
-    const days = ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه']
+    const days: Record<number,string> = {0:'یکشنبه',1:'دوشنبه',2:'سه‌شنبه',3:'چهارشنبه',4:'پنجشنبه',5:'جمعه',6:'شنبه'}
 
     const getHour = (dow: number) =>
       workingHours.find(h => h.dayOfWeek === dow) || { dayOfWeek: dow, startTime: '09:00', endTime: '18:00', isActive: false }
