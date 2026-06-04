@@ -5,19 +5,52 @@ export async function blockedSlotRoutes(app: FastifyInstance) {
 
   // Get blocked slots for a date
   app.get('/api/owner/blocked-slots', async (request, reply) => {
-    const { telegramId, date } = request.query as { telegramId: string, date: string }
+    const { telegramId, date, businessId: bizId } = request.query as { telegramId: string, date: string, businessId?: string }
 
     const user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
 
-    const business = await prisma.business.findFirst({ where: { ownerId: user.id } })
+    const business = await prisma.business.findFirst({ where: bizId ? { id: bizId, ownerId: user.id } : { ownerId: user.id } })
     if (!business) return reply.status(404).send({ error: 'No business found' })
 
     const blocked = await (prisma as any).blockedSlot.findMany({
       where: { businessId: business.id, date }
     })
 
-    return { blocked: blocked.map((b: any) => b.slotTime) }
+    // Get booked slots for this date
+    const tzOffset = 210
+    const [year, month, day] = date.split('-').map(Number)
+    const tehranMidnight = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+    tehranMidnight.setUTCMinutes(tehranMidnight.getUTCMinutes() - tzOffset)
+    const dateEnd = new Date(tehranMidnight)
+    dateEnd.setUTCHours(dateEnd.getUTCHours() + 24)
+
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        businessId: business.id,
+        startTime: { gte: tehranMidnight, lt: dateEnd },
+        status: { in: ['confirmed', 'pending'] }
+      }
+    })
+
+    // Generate all 30-min slots that overlap with appointments
+    const booked: string[] = []
+    for (const apt of appointments) {
+      const aptStartMin = Math.round((apt.startTime.getTime() - tehranMidnight.getTime()) / 60000)
+      const aptEndMin = aptStartMin + 60 // approximate duration
+      // Mark all 30-min slots that overlap
+      for (let t = Math.floor(aptStartMin / 30) * 30; t < aptEndMin; t += 30) {
+        const h = Math.floor(t / 60).toString().padStart(2,'0')
+        const m = (t % 60).toString().padStart(2,'0')
+        const slotStr = h + ':' + m
+        if (!booked.includes(slotStr)) booked.push(slotStr)
+      }
+    }
+
+    return { 
+      blocked: blocked.map((b: any) => b.slotTime),
+      booked
+    }
   })
 
   // Toggle blocked slot

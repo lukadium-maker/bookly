@@ -1,3 +1,4 @@
+import { Sparkles, Clock, Scissors, CheckCircle2, XCircle } from 'lucide-react'
 import Onboarding from './Onboarding'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
@@ -84,6 +85,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
   const [slotsDate, setSlotsDate] = useState('')
   const [blockedSlots, setBlockedSlots] = useState<string[]>([])
   const [slotsLoading, setSlotsLoading] = useState(false)
+  const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [pickerJYear, setPickerJYear] = useState(0)
   const [pickerJMonth, setPickerJMonth] = useState(0)
@@ -341,11 +343,11 @@ export default function OwnerDashboard({ telegramId }: Props) {
             <span>همه نوبت‌ها</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('services')}>
-            <span>✨</span>
+            <Sparkles size={18} color='#C9A84C' />
             <span>مدیریت سرویس‌ها</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('hours')}>
-            <span>⏰</span>
+            <Clock size={18} color='#a78bfa' />
             <span>ساعات کاری</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('manageSlots')}>
@@ -478,7 +480,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
         {services.map(s => (
           <div key={s.id} className="service-card">
             <div className="service-card-left">
-              <div className="service-icon">✨</div>
+              <div className="service-icon"><Scissors size={16} color="#C9A84C" /></div>
               <div>
                 <div className="service-name">{s.name}</div>
                 <div className="service-meta">{toPersianNum(s.duration)} دقیقه · {formatPrice(s.price)}</div>
@@ -948,8 +950,9 @@ export default function OwnerDashboard({ telegramId }: Props) {
     const loadBlockedSlots = async (date: string) => {
       setSlotsLoading(true)
       try {
-        const res = await axios.get(API + '/owner/blocked-slots', { params: { telegramId, date } })
+        const res = await axios.get(API + '/owner/blocked-slots', { params: { telegramId, date, businessId: selectedBusinessId || undefined } })
         setBlockedSlots(res.data.blocked || [])
+        setBookedSlots(res.data.booked || [])
       } catch {}
       setSlotsLoading(false)
     }
@@ -1119,23 +1122,23 @@ export default function OwnerDashboard({ telegramId }: Props) {
                   return (
                     <button
                       key={slot}
-                      onClick={() => toggleSlot(slot)}
+                      onClick={() => !bookedSlots.includes(slot) && toggleSlot(slot)}
                       style={{
                         padding:'12px 8px',
                         borderRadius:'12px',
                         border:'none',
-                        background: isBlocked ? 'rgba(255,59,48,0.2)' : 'rgba(52,199,89,0.15)',
-                        color: isBlocked ? '#ff6b6b' : '#4ade80',
+                        background: bookedSlots.includes(slot) ? 'rgba(120,120,120,0.1)' : isBlocked ? 'rgba(255,59,48,0.2)' : 'rgba(52,199,89,0.15)',
+                        color: bookedSlots.includes(slot) ? 'rgba(255,255,255,0.2)' : isBlocked ? '#ff6b6b' : '#4ade80',
                         fontSize:'14px',
                         fontWeight:'700',
-                        cursor:'pointer',
+                        cursor: bookedSlots.includes(slot) ? 'not-allowed' : 'pointer',
                         fontFamily:'Vazirmatn,sans-serif',
                         transition:'all 0.2s'
                       }}
                     >
                       {slot}
                       <div style={{fontSize:'10px',marginTop:'2px'}}>
-                        {isBlocked ? '❌' : '✅'}
+                        {bookedSlots.includes(slot) ? '-' : isBlocked ? <XCircle size={14} color='#ff6b6b' /> : <CheckCircle2 size={14} color='#4ade80' />}
                       </div>
                     </button>
                   )
