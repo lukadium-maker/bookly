@@ -119,7 +119,8 @@ export async function getAvailableSlots(
     const slotEnd = new Date(slotStart)
     slotEnd.setUTCMinutes(slotEnd.getUTCMinutes() + duration)
 
-    if (slotStart <= now) continue
+    const minBookingTime = new Date(now.getTime() + 5 * 60 * 60 * 1000) // 5 hours from now
+    if (slotStart <= minBookingTime) continue
 
     const tehranSlotStart = new Date(slotStart.getTime() + tzOffset * 60 * 1000)
     const slotTimeStr = tehranSlotStart.getUTCHours().toString().padStart(2,'0') + ':' + tehranSlotStart.getUTCMinutes().toString().padStart(2,'0')
