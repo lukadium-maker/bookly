@@ -1,4 +1,4 @@
-import { Sparkles, Clock, Scissors, CheckCircle2, XCircle, Settings, CalendarDays, Ban, Link2, ClipboardCopy, PenLine, Hospital } from 'lucide-react'
+import { Sparkles, Clock, Scissors, CheckCircle2, XCircle, Settings } from 'lucide-react'
 import Onboarding from './Onboarding'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
@@ -241,7 +241,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
             ) : (
               <div className="business-avatar" style={{background:"linear-gradient(135deg,#6333ff,#a78bfa)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",fontWeight:"900",color:"white"}}>{businessName ? businessName.charAt(0) : "B"}</div>
             )}
-            <div className="avatar-edit-badge">{uploading ? '...' : <PenLine size={11} />}</div>
+            <div className="avatar-edit-badge">{uploading ? '...' : '✏️'}</div>
           </label>
           <input
             id="avatar-input"
@@ -332,14 +332,14 @@ export default function OwnerDashboard({ telegramId }: Props) {
 
         {todayApts.length === 0 && (
           <div className="empty-state">
-            <div className="empty-icon"><Hospital size={40} color="rgba(255,255,255,0.2)" /></div>
+            <div className="empty-icon">🏥</div>
             <div>امروز نوبتی ندارید</div>
           </div>
         )}
 
         <div className="owner-menu">
           <button className="menu-btn" onClick={() => setScreen('appointments')}>
-            <span style={{display:'flex',alignItems:'center'}}><CalendarDays size={18} color='#C9A84C' /></span>
+            <span>📅</span>
             <span>همه نوبت‌ها</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('services')}>
@@ -351,11 +351,11 @@ export default function OwnerDashboard({ telegramId }: Props) {
             <span>ساعات کاری</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('manageSlots')}>
-            <span style={{display:'flex',alignItems:'center'}}><Ban size={18} color='#ff6b6b' /></span>
+            <span>🚫</span>
             <span>مسدود کردن ساعات</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('share')}>
-            <span style={{display:'flex',alignItems:'center'}}><Link2 size={18} color='#60a5fa' /></span>
+            <span>🔗</span>
             <span>لینک رزرو نوبت</span>
           </button>
           <button className="menu-btn" onClick={() => setScreen('settings')}>
@@ -373,7 +373,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
             }).catch(() => {
               alert('https://t.me/bookly_ir_bot?start=' + businessSlug)
             })
-          }}><ClipboardCopy size={15} style={{marginLeft:"6px",verticalAlign:"middle"}} /> کپی لینک</button>
+          }}>📋 کپی لینک</button>
         </div>
         <div className="bottom-padding" />
       </div>
@@ -662,7 +662,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
           <button className="copy-btn" onClick={() => {
             navigator.clipboard.writeText(bookingLink)
             alert('کپی شد!')
-          }}><ClipboardCopy size={15} style={{marginLeft:"6px",verticalAlign:"middle"}} /> کپی</button>
+          }}>📋 کپی</button>
         </div>
 
         <div className="section-title">لینک مستقیم</div>
@@ -671,7 +671,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
           <button className="copy-btn" onClick={() => {
             navigator.clipboard.writeText(miniAppLink)
             alert('کپی شد!')
-          }}><ClipboardCopy size={15} style={{marginLeft:"6px",verticalAlign:"middle"}} /> کپی</button>
+          }}>📋 کپی</button>
         </div>
 
         <div className="share-info">
