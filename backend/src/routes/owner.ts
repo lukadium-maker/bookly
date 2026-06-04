@@ -7,7 +7,7 @@ export async function ownerRoutes(app: FastifyInstance) {
   // Admin: generate database backup and return download URL
   app.get('/api/admin/backup', async (request, reply) => {
     const { telegramId } = request.query as { telegramId: string }
-    if (telegramId !== '24247682') return reply.status(403).send({ error: 'Forbidden' })
+    if (telegramId !== process.env.ADMIN_TELEGRAM_ID) return reply.status(403).send({ error: 'Forbidden' })
     const { exec } = await import('child_process')
     const { promisify } = await import('util')
     const execAsync = promisify(exec)
@@ -27,7 +27,7 @@ export async function ownerRoutes(app: FastifyInstance) {
   // Super admin endpoint
   app.get('/api/admin/businesses', async (request, reply) => {
     const { telegramId } = request.query as { telegramId: string }
-    if (telegramId !== '24247682') return reply.status(403).send({ error: 'Forbidden' })
+    if (telegramId !== process.env.ADMIN_TELEGRAM_ID) return reply.status(403).send({ error: 'Forbidden' })
 
     const businesses = await prisma.business.findMany({
       include: {

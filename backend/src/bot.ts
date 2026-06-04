@@ -7,7 +7,7 @@ export const bot = new Bot(BOT_TOKEN)
 
 bot.command('admin', async (ctx) => {
   const telegramId = ctx.from?.id?.toString()
-  if (telegramId !== '24247682') return
+  if (telegramId !== process.env.ADMIN_TELEGRAM_ID) return
 
   await ctx.reply('پنل مدیریت بوکلی', {
     reply_markup: {
