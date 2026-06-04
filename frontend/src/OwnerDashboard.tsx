@@ -1,10 +1,18 @@
-import { Sparkles, Clock, Scissors, CheckCircle2, XCircle, Settings, CalendarDays, Ban, Link2, ClipboardCopy, PenLine, Hospital } from 'lucide-react'
+import { Sparkles, Clock, Scissors, CheckCircle2, XCircle, Settings, CalendarDays, Ban, Link2, ClipboardCopy, PenLine, Hospital, Building2 } from 'lucide-react'
 import Onboarding from './Onboarding'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import jalaali from 'jalaali-js'
 
 const API = 'https://bookly.kindtoy.ir/api'
+
+const ownerAxios = axios.create({ baseURL: API })
+ownerAxios.interceptors.request.use((cfg: any) => {
+  const tg = (window as any).Telegram?.WebApp
+  const id = tg?.initData || ''
+  if (id) cfg.headers['x-telegram-init-data'] = id
+  return cfg
+})
 
 const PERSIAN_MONTHS = [
   'فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور',
@@ -116,7 +124,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
     setLoading(true)
     try {
       // Load all businesses first
-      const allBizRes = await axios.get(API + '/owner/businesses', { params: { telegramId } })
+      const allBizRes = await ownerAxios.get('/owner/businesses', { params: { telegramId } })
       const bizList2 = allBizRes.data.businesses || []
       setBusinesses(bizList2)
       if ((allBizRes.data.businesses || []).length === 0) {
@@ -142,9 +150,9 @@ export default function OwnerDashboard({ telegramId }: Props) {
       }
 
       const [todayRes, allRes, bizRes] = await Promise.all([
-        axios.get(API + '/owner/appointments', { params: { telegramId, filter: 'today', businessId: activeBizId } }),
-        axios.get(API + '/owner/appointments', { params: { telegramId, filter: 'upcoming', businessId: activeBizId } }),
-        (() => { console.log('Loading business with activeBizId:', activeBizId); return axios.get(API + '/owner/business', { params: { telegramId, businessId: activeBizId } }) })()
+        ownerAxios.get('/owner/appointments', { params: { telegramId, filter: 'today', businessId: activeBizId } }),
+        ownerAxios.get('/owner/appointments', { params: { telegramId, filter: 'upcoming', businessId: activeBizId } }),
+        (() => { console.log('Loading business with activeBizId:', activeBizId); return ownerAxios.get('/owner/business', { params: { telegramId, businessId: activeBizId } }) })()
       ])
       setTodayApts(todayRes.data.appointments)
       setAppointments(allRes.data.appointments)
@@ -157,7 +165,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       setEditCategory(bizRes.data.category || '')
       // Load avatar
       try {
-        const avatarRes = await axios.get(API + '/owner/avatar', { params: { telegramId, businessId: activeBizId } })
+        const avatarRes = await ownerAxios.get('/owner/avatar', { params: { telegramId, businessId: activeBizId } })
         setAvatarUrl(avatarRes.data.avatarUrl)
       } catch {}
     } catch (err: any) {
@@ -172,7 +180,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
 
   const cancelAppointment = async (id: string) => {
     try {
-      await axios.patch(API + '/appointments/' + id + '/cancel', { cancelledBy: 'owner' })
+      await ownerAxios.patch('/appointments/' + id + '/cancel', { cancelledBy: 'owner', telegramId })
       await loadDashboard()
       setScreen('appointments')
     } catch {
@@ -183,7 +191,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
   const saveWorkingHours = async () => {
     setLoading(true)
     try {
-      await axios.put(API + '/owner/working-hours', { telegramId, hours: workingHours })
+      await ownerAxios.put('/owner/working-hours', { telegramId, hours: workingHours })
       setError('')
       alert('ساعات کاری به‌روزشد!')
     } catch {
@@ -195,7 +203,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
   const addService = async () => {
     if (!newName || !newDuration) return
     try {
-      await axios.post(API + '/owner/services', {
+      await ownerAxios.post('/owner/services', {
         telegramId,
         name: newName,
         duration: parseInt(newDuration),
@@ -215,7 +223,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
 
   const deleteService = async (id: string) => {
     try {
-      await axios.delete(API + '/owner/services/' + id, { data: { telegramId } })
+      await ownerAxios.delete('/owner/services/' + id, { data: { telegramId } })
       await loadDashboard()
     } catch {
       setError('خطا در حذف سرویس')
@@ -274,7 +282,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
                   const response = await fetch(API + '/owner/upload-avatar-base64', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegramId, base64, mimeType: 'image/jpeg' })
+                    body: JSON.stringify({ telegramId, base64, mimeType: 'image/jpeg', businessId: selectedBusinessId || undefined })
                   })
                   const res = await response.json()
                   if (!response.ok) throw new Error(res.error || 'Upload failed')
@@ -693,7 +701,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       setDeleting(true)
       setDelError('')
       try {
-        await axios.delete(API + '/owner/business', { data: { telegramId, businessId: selectedBusinessId || undefined } })
+        await ownerAxios.delete('/owner/business', { data: { telegramId, businessId: selectedBusinessId || undefined } })
         alert('کسب‌وکار با موفقیت حذف شد')
         window.location.reload()
       } catch (err: any) {
@@ -770,7 +778,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       setEditSaving(true)
       setEditError('')
       try {
-        await axios.patch(API + '/owner/business', {
+        await ownerAxios.patch('/owner/business', {
           telegramId,
           name: editName,
           description: editDesc,
@@ -844,7 +852,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
     return (
       <div className="screen" dir="rtl">
         <div className="header">
-          <div className="business-avatar" style={{background:"linear-gradient(135deg,#6333ff,#a78bfa)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",fontWeight:"900",color:"white"}}>{businessName ? businessName.charAt(0) : "B"}</div>
+          <div className="business-avatar" style={{background:"linear-gradient(135deg,#6333ff,#a78bfa)",display:"flex",alignItems:"center",justifyContent:"center"}}><Building2 size={24} color="#a78bfa" /></div>
           <h1>کسب‌وکار خود را انتخاب کنید</h1>
           <p>برای مدیریت کدام کسب‌وکار وارد شوید؟</p>
         </div>
@@ -867,9 +875,9 @@ export default function OwnerDashboard({ telegramId }: Props) {
               }}
             >
               {biz.avatarUrl ? (
-                <img src={'https://bookly.kindtoy.ir' + biz.avatarUrl} style={{width:'32px',height:'32px',borderRadius:'8px',objectFit:'cover'}} alt="" />
+                <img src={'https://bookly.kindtoy.ir' + biz.avatarUrl + '?t=' + Date.now()} style={{width:'32px',height:'32px',borderRadius:'8px',objectFit:'cover'}} alt="" />
               ) : (
-                <div style={{width:"32px",height:"32px",borderRadius:"8px",background:"linear-gradient(135deg,#6333ff,#a78bfa)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:"900",color:"white",flexShrink:0}}>{biz.name.charAt(0)}</div>
+                <div style={{width:"32px",height:"32px",borderRadius:"8px",background:"linear-gradient(135deg,#6333ff,#a78bfa)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Building2 size={18} color="#a78bfa" /></div>
               )}
               <span>{biz.name}</span>
             </button>
@@ -894,7 +902,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
       if (!editServiceName || !editServiceDuration) return
       setEditSaving(true)
       try {
-        await axios.patch(API + '/owner/services/' + editingService.id, {
+        await ownerAxios.patch('/owner/services/' + editingService.id, {
           telegramId,
           name: editServiceName,
           duration: parseInt(editServiceDuration),
@@ -950,7 +958,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
     const loadBlockedSlots = async (date: string) => {
       setSlotsLoading(true)
       try {
-        const res = await axios.get(API + '/owner/blocked-slots', { params: { telegramId, date, businessId: selectedBusinessId || undefined } })
+        const res = await ownerAxios.get('/owner/blocked-slots', { params: { telegramId, date, businessId: selectedBusinessId || undefined } })
         setBlockedSlots(res.data.blocked || [])
         setBookedSlots(res.data.booked || [])
       } catch {}
@@ -959,7 +967,7 @@ export default function OwnerDashboard({ telegramId }: Props) {
 
     const toggleSlot = async (slotTime: string) => {
       try {
-        const res = await axios.post(API + '/owner/blocked-slots', {
+        const res = await ownerAxios.post('/owner/blocked-slots', {
           telegramId, date: slotsDate, slotTime, businessId: selectedBusinessId || undefined
         })
         if (res.data.blocked) {

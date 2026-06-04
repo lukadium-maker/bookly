@@ -1,7 +1,7 @@
 import { Bot } from 'grammy'
 import { prisma } from './db'
 
-const BOT_TOKEN = '8837076290:AAF266pt1EQpksIQBcse89yAINC3G14YBqU'
+const BOT_TOKEN = process.env.BOT_TOKEN!
 
 export const bot = new Bot(BOT_TOKEN)
 

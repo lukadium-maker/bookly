@@ -338,6 +338,7 @@ export default function App() {
 
   if (screen === 'success') return (
     <div className="success-screen" dir="rtl">
+      <button className="back-btn" onClick={() => setScreen('services')} style={{alignSelf:'flex-start'}}>← بازگشت</button>
       <div className="success-icon-wrap">✅</div>
       <div className="success-title">نوبت ثبت شد!</div>
       <div className="success-subtitle">
