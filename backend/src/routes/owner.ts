@@ -83,6 +83,9 @@ export async function ownerRoutes(app: FastifyInstance) {
     let user = await prisma.user.findUnique({ where: { telegramId } })
     if (!user) return reply.status(404).send({ error: 'User not found' })
 
+    const bizCount = await prisma.business.count({ where: { ownerId: user.id } })
+    if (bizCount >= 7) return reply.status(400).send({ error: 'حداکثر ۷ کسب‌وکار مجاز است' })
+
     const timestamp = Date.now().toString(36)
     let baseSlug = name
       .toLowerCase()
