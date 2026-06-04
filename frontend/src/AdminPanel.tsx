@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import { Download, Briefcase, Calendar, Building2, Shield } from 'lucide-react'
 
 const API = 'https://bookly.kindtoy.ir/api'
 
-// Add font
-const style = document.createElement('link')
-style.rel = 'stylesheet'
-style.href = 'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap'
-document.head.appendChild(style)
+const CATEGORY_LABELS: Record<string, string> = {
+  hair: 'آرایشگاه',
+  beauty: 'زیبایی',
+  nail: 'ناخن',
+  lash: 'لش',
+  skin: 'پوست',
+  massage: 'ماساژ',
+  other: 'سایر'
+}
 
 export default function AdminPanel({ telegramId }: { telegramId: string }) {
   const [businesses, setBusinesses] = useState<any[]>([])
@@ -16,26 +21,70 @@ export default function AdminPanel({ telegramId }: { telegramId: string }) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    console.log('Admin telegramId:', telegramId)
     axios.get(API + '/admin/businesses', { params: { telegramId } })
       .then(res => { setBusinesses(res.data.businesses); setLoading(false) })
       .catch((err) => { setError('خطا: ' + (err.response?.data?.error || err.message)); setLoading(false) })
   }, [])
 
-  if (loading) return <div style={{color:'white',textAlign:'center',padding:'40px'}}>در حال بارگذاری...</div>
-  if (error) return <div style={{color:'red',textAlign:'center',padding:'40px'}}>{error}</div>
+  if (loading) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'#0D0001',color:'white',fontFamily:'Vazirmatn,sans-serif'}}>
+      در حال بارگذاری...
+    </div>
+  )
+
+  if (error) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'#0D0001',color:'#ff6b6b',fontFamily:'Vazirmatn,sans-serif'}}>
+      {error}
+    </div>
+  )
+
+  const totalAppointments = businesses.reduce((sum, b) => sum + (b._count?.appointments || 0), 0)
+  const totalServices = businesses.reduce((sum, b) => sum + (b.services?.length || 0), 0)
 
   return (
-    <div style={{background:'#1A0003',minHeight:'100vh',padding:'24px',fontFamily:'Vazirmatn,sans-serif',direction:'rtl',color:'white'}}>
-      <h1 style={{fontSize:'24px',fontWeight:'900',color:'#C9A84C',marginBottom:'8px'}}>پنل ادمین بوکلی</h1>
-      <p style={{color:'rgba(255,255,255,0.4)',marginBottom:'16px',fontSize:'13px'}}>{businesses.length} کسب‌وکار ثبت شده</p>
+    <div style={{background:'linear-gradient(160deg,#1A0003,#0D0001)',minHeight:'100vh',padding:'24px 16px',fontFamily:'Vazirmatn,sans-serif',direction:'rtl',color:'white'}}>
+
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'24px'}}>
+        <div style={{
+          width:'48px',height:'48px',borderRadius:'14px',
+          background:'linear-gradient(135deg,#C9A84C,#E8C97A)',
+          display:'flex',alignItems:'center',justifyContent:'center'
+        }}>
+          <Shield size={24} color="#1A0003" />
+        </div>
+        <div>
+          <h1 style={{fontSize:'20px',fontWeight:'900',color:'white',margin:0}}>پنل ادمین بوکلی</h1>
+          <p style={{fontSize:'12px',color:'rgba(255,255,255,0.4)',margin:0}}>مدیریت کل پلتفرم</p>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'10px',marginBottom:'20px'}}>
+        {[
+          { icon: <Building2 size={18} color="#C9A84C" />, value: businesses.length, label: 'کسب‌وکار' },
+          { icon: <Calendar size={18} color="#6333ff" />, value: totalAppointments, label: 'نوبت' },
+          { icon: <Briefcase size={18} color="#4ade80" />, value: totalServices, label: 'سرویس' },
+        ].map((stat, i) => (
+          <div key={i} style={{
+            background:'rgba(255,255,255,0.04)',
+            border:'1px solid rgba(255,255,255,0.08)',
+            borderRadius:'14px',padding:'14px 10px',textAlign:'center'
+          }}>
+            <div style={{display:'flex',justifyContent:'center',marginBottom:'6px'}}>{stat.icon}</div>
+            <div style={{fontSize:'20px',fontWeight:'900'}}>{stat.value}</div>
+            <div style={{fontSize:'11px',color:'rgba(255,255,255,0.4)'}}>{stat.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Backup Button */}
       <button
         onClick={async () => {
           setBackupLoading(true)
           try {
             const res = await fetch(API + '/admin/backup?telegramId=' + telegramId)
             const data = await res.json()
-            // Copy URL to clipboard
             navigator.clipboard.writeText(data.url).then(() => {
               alert('لینک کپی شد!\n\n' + data.url + '\n\nاین لینک را در مرورگر باز کنید و فایل را دانلود کنید')
             }).catch(() => {
@@ -45,45 +94,70 @@ export default function AdminPanel({ telegramId }: { telegramId: string }) {
           setBackupLoading(false)
         }}
         style={{
+          width:'100%',
+          display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',
           background:'linear-gradient(135deg,#C9A84C,#E8C97A)',
-          color:'#1A0003',
-          border:'none',
-          borderRadius:'12px',
-          padding:'12px 24px',
-          fontWeight:'800',
-          fontSize:'14px',
-          cursor:'pointer',
-          marginBottom:'24px',
+          color:'#1A0003',border:'none',borderRadius:'14px',
+          padding:'14px 24px',fontWeight:'800',fontSize:'14px',
+          cursor:'pointer',marginBottom:'20px',
           fontFamily:'Vazirmatn,sans-serif'
         }}
       >
-        {backupLoading ? 'در حال آماده‌سازی...' : '⬇️ دانلود Backup دیتابیس'}
+        <Download size={18} />
+        {backupLoading ? 'در حال آماده‌سازی...' : 'دانلود Backup دیتابیس'}
       </button>
+
+      {/* Business List */}
+      <div style={{fontSize:'12px',color:'rgba(255,255,255,0.3)',marginBottom:'12px',display:'flex',alignItems:'center',gap:'6px'}}>
+        <Building2 size={13} />
+        لیست کسب‌وکارها
+      </div>
 
       {businesses.map(biz => (
         <div key={biz.id} style={{
           background:'rgba(255,255,255,0.04)',
           border:'1px solid rgba(255,255,255,0.08)',
-          borderRadius:'16px',
-          padding:'16px',
-          marginBottom:'12px'
+          borderRadius:'16px',padding:'16px',marginBottom:'10px'
         }}>
-          <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'8px'}}>
-            {biz.avatarUrl && (
-              <img src={'https://bookly.kindtoy.ir' + biz.avatarUrl} style={{width:'40px',height:'40px',borderRadius:'10px',objectFit:'cover'}} alt="" />
+          <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'12px'}}>
+            {biz.avatarUrl ? (
+              <img src={'https://bookly.kindtoy.ir' + biz.avatarUrl} style={{width:'44px',height:'44px',borderRadius:'12px',objectFit:'cover'}} alt="" />
+            ) : (
+              <div style={{
+                width:'44px',height:'44px',borderRadius:'12px',
+                background:'rgba(99,51,255,0.2)',
+                display:'flex',alignItems:'center',justifyContent:'center'
+              }}>
+                <Building2 size={22} color="#6333ff" />
+              </div>
             )}
-            <div>
-              <div style={{fontWeight:'700',fontSize:'16px'}}>{biz.name}</div>
-              <div style={{fontSize:'12px',color:'#C9A84C'}}>{biz.slug}</div>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:'800',fontSize:'15px'}}>{biz.name}</div>
+              <div style={{fontSize:'11px',color:'#C9A84C',marginTop:'2px'}}>{biz.slug}</div>
             </div>
           </div>
-          <div style={{display:'flex',gap:'16px',fontSize:'13px',color:'rgba(255,255,255,0.5)'}}>
-            <span>👤 {biz.owner?.firstName || '-'}</span>
-            <span>{biz.services?.length || 0} سرویس</span>
-            <span>📅 {biz._count?.appointments || 0} نوبت</span>
-            <span>📁 {biz.category || '-'}</span>
+
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
+            {[
+              { label: 'مالک', text: biz.owner?.firstName || '-' },
+              { label: 'دسته', text: CATEGORY_LABELS[biz.category] || biz.category || '-' },
+              { label: 'سرویس', text: (biz.services?.length || 0) + ' عدد' },
+              { label: 'نوبت', text: (biz._count?.appointments || 0) + ' عدد' },
+            ].map((item: any, i: number) => (
+              <div key={i} style={{
+                display:'flex',flexDirection:'column',gap:'2px',
+                fontSize:'12px',color:'rgba(255,255,255,0.5)',
+                background:'rgba(255,255,255,0.03)',
+                borderRadius:'8px',padding:'7px 10px'
+              }}>
+    <span style={{color:'rgba(255,255,255,0.3)',fontSize:'10px'}}>{item.label}</span>
+                <span>{item.text}</span>
+              </div>
+            ))}
           </div>
-          <div style={{marginTop:'8px',fontSize:'11px',color:'rgba(255,255,255,0.3)'}}>
+
+          <div style={{marginTop:'10px',fontSize:'11px',color:'rgba(255,255,255,0.25)',display:'flex',alignItems:'center',gap:'4px'}}>
+            <Calendar size={11} />
             {new Date(biz.createdAt).toLocaleDateString('fa-IR')}
           </div>
         </div>

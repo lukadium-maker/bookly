@@ -13,7 +13,7 @@ bot.command('admin', async (ctx) => {
     reply_markup: {
       inline_keyboard: [[{
         text: 'ورود به پنل',
-        web_app: { url: 'https://bookly.kindtoy.ir/app?admin=1&v=111' }
+        web_app: { url: 'https://bookly.kindtoy.ir/app?admin=1&v=115' }
       }]]
     }
   })
@@ -24,7 +24,7 @@ bot.command('mynobat', async (ctx) => {
     reply_markup: {
       inline_keyboard: [[{
         text: 'مشاهده نوبت‌های من',
-        web_app: { url: 'https://bookly.kindtoy.ir/app?mode=myappointments&v=111' }
+        web_app: { url: 'https://bookly.kindtoy.ir/app?mode=myappointments&v=115' }
       }]]
     }
   })
